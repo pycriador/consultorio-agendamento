@@ -93,7 +93,7 @@ class UIComponents {
     sidebarEl.innerHTML = `
       <aside class="admin-sidebar" id="app-sidebar">
         <div class="sidebar-header">
-          <div class="sidebar-brand-icon" style="background: linear-gradient(135deg, var(--color-primary), var(--color-burgundy));">M</div>
+          <img src="${basePath ? basePath + 'assets/images/logo.png' : '../assets/images/logo.png'}" alt="Logo Dra. Marta" style="width: 36px; height: 36px; object-fit: contain; flex-shrink: 0;">
           <div class="sidebar-brand-text">
             <span class="sidebar-brand-title">Dra. Marta Gelsi</span>
             <span class="sidebar-brand-subtitle">Dentista • CRO 71482</span>
