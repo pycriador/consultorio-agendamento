@@ -1,6 +1,7 @@
 /**
  * RESPONSIVE STYLES
  * Adaptações para Tablet, Notebook e Mobile (sem scroll horizontal)
+ * Dra. Marta Gelsi Dias — Odontologia
  */
 
 /* ==========================================================================
@@ -9,6 +10,29 @@
 @media (max-width: 1024px) {
   :root {
     --sidebar-width: 240px;
+  }
+
+  .hero-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-8);
+  }
+
+  .about-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-8);
+  }
+
+  .hero-photo-img {
+    height: 360px;
+  }
+
+  .about-photo-wrapper img {
+    height: 320px;
+  }
+
+  .floating-hero-pill {
+    left: 12px;
+    bottom: 16px;
   }
 
   .admin-main-wrapper {
@@ -70,14 +94,15 @@
     display: flex;
     flex-direction: column;
     position: absolute;
-    top: 76px;
+    top: 84px;
     left: 0;
     right: 0;
     background-color: var(--color-surface);
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 2px solid var(--color-border);
     padding: var(--space-6);
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--shadow-xl);
     gap: var(--space-4);
+    z-index: var(--z-drawer);
   }
 
   .mobile-menu-btn {
@@ -85,7 +110,7 @@
   }
 
   .hero-section {
-    padding: var(--space-10) 0 var(--space-12);
+    padding: var(--space-8) 0 var(--space-12);
   }
 
   .hero-actions {
@@ -97,8 +122,19 @@
     width: 100%;
   }
 
+  .hero-photo-img {
+    height: 300px;
+  }
+
+  .floating-hero-pill {
+    position: static;
+    margin-top: var(--space-3);
+    border-radius: var(--radius-md);
+  }
+
   .treatments-grid,
-  .plans-grid {
+  .plans-grid,
+  .features-grid {
     grid-template-columns: 1fr;
   }
 
@@ -138,6 +174,11 @@
     max-width: none;
     width: auto;
   }
+
+  #whatsapp-split-view,
+  #patient-info-grid {
+    grid-template-columns: 1fr !important;
+  }
 }
 
 /* ==========================================================================
@@ -146,12 +187,25 @@
 @media (max-width: 480px) {
   :root {
     --font-size-4xl: 1.875rem;
-    --font-size-3xl: 1.5rem;
+    --font-size-3xl: 1.45rem;
   }
 
   .container {
     padding-left: var(--space-4);
     padding-right: var(--space-4);
+  }
+
+  .brand-logo-img {
+    width: 38px;
+    height: 38px;
+  }
+
+  .brand-name-title {
+    font-size: 1rem;
+  }
+
+  .brand-dentista-text {
+    font-size: 1.1rem;
   }
 
   .topbar-user .user-info {

@@ -93,10 +93,10 @@ class UIComponents {
     sidebarEl.innerHTML = `
       <aside class="admin-sidebar" id="app-sidebar">
         <div class="sidebar-header">
-          <div class="sidebar-brand-icon">M</div>
+          <div class="sidebar-brand-icon" style="background: linear-gradient(135deg, var(--color-primary), var(--color-burgundy));">M</div>
           <div class="sidebar-brand-text">
             <span class="sidebar-brand-title">Dra. Marta Gelsi</span>
-            <span class="sidebar-brand-subtitle">Gestão Odontológica</span>
+            <span class="sidebar-brand-subtitle">Dentista • CRO 71482</span>
           </div>
         </div>
 
@@ -180,7 +180,7 @@ class UIComponents {
 
     const session = StorageService.getSession();
     const userName = session ? (session.name || "Dra. Marta Gelsi") : "Dra. Marta Gelsi";
-    const userRole = session ? (session.role || "Cirurgiã-Dentista") : "Cirurgiã-Dentista";
+    const userRole = session ? (session.role || "Dentista • CRO 71482") : "Dentista • CRO 71482";
 
     topbarEl.innerHTML = `
       <header class="admin-topbar">
