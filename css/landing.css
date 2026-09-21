@@ -313,16 +313,27 @@
 }
 
 .treatment-icon {
-  width: 58px;
-  height: 58px;
-  border-radius: var(--radius-lg);
-  background-color: var(--color-primary-light);
-  color: var(--color-primary);
+  width: 64px;
+  height: 64px;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: var(--space-5);
-  box-shadow: 0 4px 10px rgba(219, 39, 119, 0.12);
+  background: transparent;
+  border-radius: 50%;
+  box-shadow: none;
+}
+
+.treatment-icon-img {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 10px rgba(219, 39, 119, 0.18));
+  transition: transform var(--transition-normal);
+}
+
+.treatment-card:hover .treatment-icon-img {
+  transform: scale(1.08) rotate(2deg);
 }
 
 .treatment-title {
