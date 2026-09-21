@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agendamentos — Dra. Marta Gelsi Dias</title>
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/reset.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/forms.css">
+  <link rel="stylesheet" href="../css/admin.css">
+  <link rel="stylesheet" href="../css/responsive.css">
+</head>
+<body class="admin-layout">
+
+  <div id="admin-sidebar-container"></div>
+
+  <div class="admin-main-wrapper">
+    <div id="admin-topbar-container"></div>
+
+    <main class="admin-content">
+      <div class="admin-page-header">
+        <div>
+          <h1 style="font-size: var(--font-size-2xl);">Agendamentos</h1>
+          <p class="text-sm text-muted">Acompanhe todas as consultas marcadas, origens e status de atendimento.</p>
+        </div>
+        <button type="button" class="btn btn-primary" id="btn-open-appointment-modal">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          Novo Agendamento
+        </button>
+      </div>
+
+      <!-- Filtros -->
+      <div class="card" style="padding: var(--space-4) var(--space-5); margin-bottom: var(--space-6);">
+        <div class="form-grid">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="filter-apt-search">Buscar Paciente / Procedimento</label>
+            <input type="text" id="filter-apt-search" class="form-input" placeholder="Digite o nome do paciente ou serviço...">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="filter-apt-status">Status</label>
+            <select id="filter-apt-status" class="form-select">
+              <option value="">Todos os status</option>
+              <option value="Confirmado">Confirmado</option>
+              <option value="Pendente">Pendente</option>
+              <option value="Concluído">Concluído</option>
+              <option value="Cancelado">Cancelado</option>
+              <option value="Não compareceu">Não compareceu</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="filter-apt-origin">Origem</label>
+            <select id="filter-apt-origin" class="form-select">
+              <option value="">Todas as origens</option>
+              <option value="WhatsApp">WhatsApp</option>
+              <option value="Site">Site</option>
+              <option value="Telefone">Telefone</option>
+              <option value="Administrativo">Administrativo</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabela de Agendamentos -->
+      <div class="card">
+        <div class="table-wrapper" style="border: none; border-radius: 0;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Data & Horário</th>
+                <th>Paciente</th>
+                <th>Serviço</th>
+                <th>Profissional</th>
+                <th>Status</th>
+                <th>Origem</th>
+                <th class="text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="appointments-tbody">
+              <!-- Renderizado dinamicamente -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- MODAL: Novo / Editar Agendamento -->
+  <div class="modal-backdrop" id="appointment-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title" id="apt-modal-title">Novo Agendamento</h3>
+        <button type="button" class="btn btn-ghost btn-icon" data-modal-close aria-label="Fechar">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <form id="appointment-form">
+        <div class="modal-body">
+          <input type="hidden" id="apt-form-id">
+
+          <div class="form-group">
+            <label class="form-label form-label-required" for="apt-form-patient">Paciente</label>
+            <select id="apt-form-patient" class="form-select" required>
+              <!-- Preenchido dinamicamente -->
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label form-label-required" for="apt-form-service">Serviço / Procedimento</label>
+            <select id="apt-form-service" class="form-select" required>
+              <!-- Preenchido dinamicamente -->
+            </select>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label form-label-required" for="apt-form-date">Data</label>
+              <input type="date" id="apt-form-date" class="form-input" required value="2026-09-22">
+            </div>
+            <div class="form-group">
+              <label class="form-label form-label-required" for="apt-form-time">Horário</label>
+              <input type="time" id="apt-form-time" class="form-input" required value="09:00">
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label" for="apt-form-duration">Duração Prevista</label>
+              <select id="apt-form-duration" class="form-select">
+                <option value="20 min">20 min</option>
+                <option value="30 min">30 min</option>
+                <option value="45 min" selected>45 min</option>
+                <option value="60 min">60 min</option>
+                <option value="90 min">90 min</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="apt-form-status">Status</label>
+              <select id="apt-form-status" class="form-select">
+                <option value="Confirmado">Confirmado</option>
+                <option value="Pendente" selected>Pendente</option>
+                <option value="Concluído">Concluído</option>
+                <option value="Cancelado">Cancelado</option>
+                <option value="Não compareceu">Não compareceu</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="apt-form-notes">Observações</label>
+            <textarea id="apt-form-notes" class="form-textarea" rows="2" placeholder="Queixas clínicas, orientações pré-consulta..."></textarea>
+          </div>
+
+          <!-- Checkboxes de Simulação -->
+          <div style="background-color: #f8fafc; padding: var(--space-4); border-radius: var(--radius-md); border: 1px solid var(--color-border); display: flex; flex-direction: column; gap: var(--space-2); margin-top: var(--space-4);">
+            <label class="form-checkbox-label">
+              <input type="checkbox" id="chk-send-confirm" checked>
+              <span>☑ Enviar confirmação para o paciente</span>
+            </label>
+            <label class="form-checkbox-label">
+              <input type="checkbox" id="chk-google-calendar" checked>
+              <span>☑ Adicionar ao Google Calendar</span>
+            </label>
+            <label class="form-checkbox-label">
+              <input type="checkbox" id="chk-whatsapp-msg" checked>
+              <span>☑ Criar mensagem de WhatsApp pronta para disparo</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" data-modal-close>Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar Agendamento</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Timeline de Confirmação Mock -->
+  <div class="modal-backdrop" id="apt-timeline-modal">
+    <div class="modal-dialog modal-dialog-sm">
+      <div class="modal-header">
+        <h3 class="modal-title">Agendamento Processado</h3>
+        <button type="button" class="btn btn-ghost btn-icon" data-modal-close aria-label="Fechar">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="text-sm text-secondary" style="margin-bottom: var(--space-4);">Operação concluída com sucesso na plataforma:</p>
+        <div class="timeline">
+          <div class="timeline-item">
+            <span class="timeline-title">✓ Agendamento criado</span>
+            <span class="timeline-desc">Registrado na base de dados demonstrativa</span>
+          </div>
+          <div class="timeline-item">
+            <span class="timeline-title">✓ Horário reservado</span>
+            <span class="timeline-desc">Disponibilidade atualizada na agenda da Dra. Marta</span>
+          </div>
+          <div class="timeline-item">
+            <span class="timeline-title">✓ Evento preparado para Google Calendar</span>
+            <span class="timeline-desc">Sincronização em fila (ID: mock-event-synced)</span>
+          </div>
+          <div class="timeline-item">
+            <span class="timeline-title">✓ Mensagem de confirmação preparada</span>
+            <span class="timeline-desc">Disponível na central de WhatsApp para envio</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-modal-close>Concluir</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/mock-data.js"></script>
+  <script src="../js/storage.js"></script>
+  <script src="../js/toast.js"></script>
+  <script src="../js/modal.js"></script>
+  <script src="../js/components.js"></script>
+  <script src="../js/navigation.js"></script>
+  <script src="../js/patients.js"></script>
+  <script src="../js/appointments.js"></script>
+  <script>
+    UIComponents.renderAdminSidebar("agendamentos", "");
+    UIComponents.renderAdminTopbar("Agendamentos", "Recepção");
+
+    function renderTable() {
+      const search = document.getElementById("filter-apt-search").value.toLowerCase().trim();
+      const status = document.getElementById("filter-apt-status").value;
+      const origin = document.getElementById("filter-apt-origin").value;
+
+      let list = AppointmentsManager.getAppointments();
+
+      if (search) {
+        list = list.filter(a => 
+          (a.patientName && a.patientName.toLowerCase().includes(search)) ||
+          (a.service && a.service.toLowerCase().includes(search))
+        );
+      }
+      if (status) {
+        list = list.filter(a => a.status === status);
+      }
+      if (origin) {
+        list = list.filter(a => a.origin === origin);
+      }
+
+      const tbody = document.getElementById("appointments-tbody");
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7">${UIComponents.renderEmptyState("Nenhum agendamento localizado", "Ajuste os filtros ou crie um novo agendamento.")}</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = list.map(a => `
+        <tr>
+          <td>
+            <div class="text-bold">${Navigation.formatDate(a.date)}</div>
+            <span class="text-xs text-muted">${a.time} (${a.duration})</span>
+          </td>
+          <td>
+            <div class="text-bold">${a.patientName}</div>
+            <span class="text-xs text-muted">${a.patientId}</span>
+          </td>
+          <td>${a.service}</td>
+          <td>${a.professional || "Dra. Marta Gelsi Dias"}</td>
+          <td>${UIComponents.renderStatusBadge(a.status)}</td>
+          <td><span class="badge badge-neutral">${a.origin}</span></td>
+          <td class="text-right">
+            <div class="flex justify-end gap-1">
+              <button type="button" class="btn btn-ghost btn-sm btn-status-toggle" data-id="${a.id}" data-status="${a.status}" title="Alterar status rápido">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </button>
+              <a href="whatsapp.html?phone=&name=${encodeURIComponent(a.patientName)}" class="btn btn-ghost btn-sm" title="Enviar WhatsApp" style="color: #25d366;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+              </a>
+              <button type="button" class="btn btn-ghost btn-sm btn-delete-apt" data-id="${a.id}" data-name="${a.patientName}" title="Cancelar" style="color: var(--color-danger);">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `).join("");
+
+      // Alterar status rápido
+      tbody.querySelectorAll(".btn-status-toggle").forEach(btn => {
+        btn.onclick = () => {
+          const id = btn.getAttribute("data-id");
+          const cur = btn.getAttribute("data-status");
+          const next = cur === "Confirmado" ? "Concluído" : (cur === "Pendente" ? "Confirmado" : "Confirmado");
+          AppointmentsManager.updateStatus(id, next);
+          Toast.info(`Status do agendamento alterado para ${next}`);
+          renderTable();
+        };
+      });
+
+      // Exclusão / Cancelamento
+      tbody.querySelectorAll(".btn-delete-apt").forEach(btn => {
+        btn.onclick = () => {
+          const id = btn.getAttribute("data-id");
+          const name = btn.getAttribute("data-name");
+          Modal.confirm({
+            title: "Remover agendamento?",
+            message: `Deseja remover o agendamento de "${name}" (${id}) dos dados demonstrativos?`,
+            confirmText: "Sim, remover",
+            cancelText: "Cancelar",
+            danger: true,
+            onConfirm: () => {
+              AppointmentsManager.deleteAppointment(id);
+              Toast.success("Agendamento removido com sucesso.");
+              renderTable();
+            }
+          });
+        };
+      });
+    }
+
+    // Povoar selects do formulário
+    function populateFormSelects() {
+      const patients = PatientsManager.getPatients();
+      const patientSelect = document.getElementById("apt-form-patient");
+      patientSelect.innerHTML = patients.map(p => `
+        <option value="${p.id}" data-name="${p.name}">${p.name} (${p.phone})</option>
+      `).join("");
+
+      const services = StorageService.get("services", []);
+      const serviceSelect = document.getElementById("apt-form-service");
+      serviceSelect.innerHTML = services.map(s => `
+        <option value="${s.name}">${s.name} (${s.duration})</option>
+      `).join("");
+    }
+
+    // Abertura do modal
+    const modalEl = document.getElementById("appointment-modal");
+    const formEl = document.getElementById("appointment-form");
+
+    document.getElementById("btn-open-appointment-modal").onclick = () => {
+      populateFormSelects();
+      formEl.reset();
+      document.getElementById("apt-form-id").value = "";
+      document.getElementById("apt-modal-title").innerText = "Novo Agendamento";
+      Modal.open(modalEl);
+    };
+
+    // Submissão do agendamento
+    formEl.onsubmit = (e) => {
+      e.preventDefault();
+      const patientSelect = document.getElementById("apt-form-patient");
+      const selectedOption = patientSelect.options[patientSelect.selectedIndex];
+      const patientId = selectedOption.value;
+      const patientName = selectedOption.getAttribute("data-name");
+
+      const service = document.getElementById("apt-form-service").value;
+      const date = document.getElementById("apt-form-date").value;
+      const time = document.getElementById("apt-form-time").value;
+      const duration = document.getElementById("apt-form-duration").value;
+      const status = document.getElementById("apt-form-status").value;
+      const notes = document.getElementById("apt-form-notes").value.trim();
+
+      const aptData = {
+        patientId,
+        patientName,
+        service,
+        professional: "Dra. Marta Gelsi Dias",
+        date,
+        time,
+        duration,
+        status,
+        origin: "Administrativo",
+        notes
+      };
+
+      AppointmentsManager.saveAppointment(aptData);
+      Modal.close(modalEl);
+      renderTable();
+
+      // Abrir modal de confirmação com timeline
+      Modal.open(document.getElementById("apt-timeline-modal"));
+    };
+
+    // Filtros
+    document.getElementById("filter-apt-search").oninput = renderTable;
+    document.getElementById("filter-apt-status").onchange = renderTable;
+    document.getElementById("filter-apt-origin").onchange = renderTable;
+
+    // Carga inicial
+    renderTable();
+  </script>
+</body>
+</html>
