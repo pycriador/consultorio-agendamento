@@ -207,6 +207,7 @@
         list = list.filter(p => p.phone && p.phone.includes(phone));
       }
 
+      closePatientDropdown();
       const tbody = document.getElementById("patients-tbody");
       const info = document.getElementById("pagination-info");
       info.innerText = `Mostrando ${list.length} paciente(s)`;
@@ -234,46 +235,22 @@
           <td>${Navigation.formatDate(p.lastAppointment)}</td>
           <td>${UIComponents.renderStatusBadge(p.status === 'active' ? 'Ativo' : 'Inativo')}</td>
           <td class="text-right">
-            <div class="flex justify-end gap-1">
-              <a href="paciente-detalhes.html?id=${p.id}" class="btn btn-ghost btn-sm" title="Visualizar Detalhes">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-              </a>
-              <button type="button" class="btn btn-ghost btn-sm btn-edit-patient" data-id="${p.id}" title="Editar">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-              </button>
-              <a href="agendamentos.html?newFor=${p.id}" class="btn btn-ghost btn-sm" title="Agendar Consulta">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-              </a>
-              <button type="button" class="btn btn-ghost btn-sm btn-delete-patient" data-id="${p.id}" data-name="${p.name}" title="Excluir" style="color: var(--color-danger);">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            <div class="dropdown-wrapper">
+              <button type="button" class="btn-patient-actions" data-id="${p.id}" aria-expanded="false" title="Opções para ${p.name}">
+                <span>Ações</span>
+                <svg class="dropdown-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
               </button>
             </div>
           </td>
         </tr>
       `).join("");
 
-      // Bind botões de editar
-      tbody.querySelectorAll(".btn-edit-patient").forEach(btn => {
-        btn.onclick = () => openEditModal(btn.getAttribute("data-id"));
-      });
-
-      // Bind botões de exclusão
-      tbody.querySelectorAll(".btn-delete-patient").forEach(btn => {
-        btn.onclick = () => {
+      // Bind botões de ação dropdown dos pacientes
+      tbody.querySelectorAll(".btn-patient-actions").forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
           const id = btn.getAttribute("data-id");
-          const name = btn.getAttribute("data-name");
-          Modal.confirm({
-            title: "Excluir paciente?",
-            message: `Esta ação removerá o paciente "${name}" (${id}) dos dados demonstrativos.`,
-            confirmText: "Sim, excluir",
-            cancelText: "Cancelar",
-            danger: true,
-            onConfirm: () => {
-              PatientsManager.deletePatient(id);
-              Toast.success("Paciente excluído dos dados demonstrativos.");
-              renderTable();
-            }
-          });
+          openPatientDropdown(btn, id);
         };
       });
     }
@@ -344,8 +321,137 @@
     document.getElementById("filter-phone").oninput = renderTable;
     document.getElementById("filter-status").onchange = renderTable;
 
+    // Gerenciador do Menu Dropdown Flutuante de Ações dos Pacientes
+    const dropdownMenu = document.getElementById("patient-actions-dropdown");
+    let activeDropdownBtn = null;
+
+    function closePatientDropdown() {
+      if (!dropdownMenu) return;
+      dropdownMenu.classList.remove("show", "drop-up");
+      dropdownMenu.setAttribute("aria-hidden", "true");
+      if (activeDropdownBtn) {
+        activeDropdownBtn.classList.remove("active");
+        activeDropdownBtn.setAttribute("aria-expanded", "false");
+        activeDropdownBtn = null;
+      }
+    }
+
+    function openPatientDropdown(btn, patientId) {
+      const p = PatientsManager.getPatientById(patientId);
+      if (!p) return;
+
+      if (activeDropdownBtn === btn) {
+        closePatientDropdown();
+        return;
+      }
+
+      closePatientDropdown();
+
+      activeDropdownBtn = btn;
+      btn.classList.add("active");
+      btn.setAttribute("aria-expanded", "true");
+
+      const phoneDigits = (p.phone || "").replace(/\D/g, "");
+      const waLink = phoneDigits 
+        ? `https://wa.me/55${phoneDigits}?text=${encodeURIComponent(`Olá ${p.name}, tudo bem? Aqui é do consultório da Dra. Marta Gelsi Dias.`)}`
+        : `whatsapp.html`;
+
+      dropdownMenu.innerHTML = `
+        <div class="action-dropdown-header">${p.name} • ${p.id}</div>
+        <a href="paciente-detalhes.html?id=${p.id}" class="action-dropdown-item">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+          <span>Ver Prontuário</span>
+        </a>
+        <button type="button" class="action-dropdown-item" id="dropdown-action-edit">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+          <span>Editar Cadastro</span>
+        </button>
+        <a href="agendamentos.html?newFor=${p.id}" class="action-dropdown-item">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+          <span>Agendar Consulta</span>
+        </a>
+        <a href="${waLink}" target="_blank" rel="noopener noreferrer" class="action-dropdown-item item-whatsapp">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+          <span>Conversar no WhatsApp</span>
+        </a>
+        <div class="action-dropdown-divider"></div>
+        <button type="button" class="action-dropdown-item item-danger" id="dropdown-action-delete">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+          <span>Excluir Paciente</span>
+        </button>
+      `;
+
+      // Eventos dos botões internos do dropdown
+      document.getElementById("dropdown-action-edit").onclick = () => {
+        closePatientDropdown();
+        openEditModal(p.id);
+      };
+
+      document.getElementById("dropdown-action-delete").onclick = () => {
+        closePatientDropdown();
+        Modal.confirm({
+          title: "Excluir paciente?",
+          message: `Esta ação removerá o paciente "${p.name}" (${p.id}) dos dados demonstrativos.`,
+          confirmText: "Sim, excluir",
+          cancelText: "Cancelar",
+          danger: true,
+          onConfirm: () => {
+            PatientsManager.deletePatient(p.id);
+            Toast.success("Paciente excluído dos dados demonstrativos.");
+            renderTable();
+          }
+        });
+      };
+
+      // Exibe temporariamente para posicionamento dinâmico
+      dropdownMenu.classList.add("show");
+      dropdownMenu.setAttribute("aria-hidden", "false");
+
+      const rect = btn.getBoundingClientRect();
+      const menuHeight = dropdownMenu.offsetHeight || 230;
+      const menuWidth = dropdownMenu.offsetWidth || 220;
+
+      // Se não houver espaço embaixo, abre para cima (drop-up)
+      const spaceBelow = window.innerHeight - rect.bottom;
+      if (spaceBelow < menuHeight + 12 && rect.top > menuHeight) {
+        dropdownMenu.classList.add("drop-up");
+        dropdownMenu.style.top = `${rect.top - menuHeight - 6}px`;
+      } else {
+        dropdownMenu.classList.remove("drop-up");
+        dropdownMenu.style.top = `${rect.bottom + 6}px`;
+      }
+
+      // Alinhamento horizontal: alinhado à direita do botão, respeitando a tela
+      let rightPos = window.innerWidth - rect.right;
+      if (rightPos < 10) rightPos = 10;
+      if (rect.right - menuWidth < 10) {
+        dropdownMenu.style.left = "10px";
+        dropdownMenu.style.right = "auto";
+      } else {
+        dropdownMenu.style.right = `${rightPos}px`;
+        dropdownMenu.style.left = "auto";
+      }
+    }
+
+    // Fechar ao clicar fora, rolar ou pressionar ESC
+    document.addEventListener("click", (e) => {
+      if (!dropdownMenu) return;
+      if (dropdownMenu.contains(e.target)) return;
+      if (e.target.closest(".btn-patient-actions")) return;
+      closePatientDropdown();
+    });
+
+    window.addEventListener("scroll", closePatientDropdown, true);
+    window.addEventListener("resize", closePatientDropdown);
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closePatientDropdown();
+    });
+
     // Carga inicial
     renderTable();
   </script>
+
+  <!-- Menu Dropdown Flutuante de Ações dos Pacientes -->
+  <div id="patient-actions-dropdown" class="action-dropdown-menu" role="menu" aria-hidden="true"></div>
 </body>
 </html>
