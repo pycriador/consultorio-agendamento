@@ -52,6 +52,12 @@
     display: block;
   }
 
+  .sidebar-close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .topbar-toggle-menu {
     display: flex;
   }
@@ -86,27 +92,77 @@
     --font-size-2xl: 1.5rem;
   }
 
-  .site-nav {
-    display: none;
+  /* Cabeçalho ultra-clean da Área Pública no Mobile */
+  .site-header {
+    min-height: 64px;
   }
 
-  .site-nav.mobile-open {
-    display: flex;
-    flex-direction: column;
-    position: absolute;
-    top: 84px;
-    left: 0;
-    right: 0;
-    background-color: var(--color-surface);
-    border-bottom: 2px solid var(--color-border);
-    padding: var(--space-6);
-    box-shadow: var(--shadow-xl);
-    gap: var(--space-4);
-    z-index: var(--z-drawer);
+  .site-nav {
+    display: none !important;
+  }
+
+  /* Oculta os botões excedentes no topo mobile para manter o cabeçalho 100% clean */
+  .header-actions .header-btn-login,
+  .header-actions .header-btn-agendar,
+  .site-header-actions .header-btn-login,
+  .site-header-actions .header-btn-agendar,
+  .header-btn-desktop {
+    display: none !important;
   }
 
   .mobile-menu-btn {
     display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: var(--radius-md);
+    background-color: #fff1f3;
+    border: 1px solid #fbcfe8;
+    color: var(--color-burgundy);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .mobile-menu-btn:hover,
+  .mobile-menu-btn:active {
+    background-color: #fce7f3;
+    color: var(--color-primary);
+  }
+
+  /* Barra superior do Painel Administrativo no Mobile */
+  .admin-topbar {
+    height: 58px;
+    padding: 0 var(--space-3);
+  }
+
+  .topbar-breadcrumb {
+    display: none !important;
+  }
+
+  .topbar-mobile-title {
+    display: block;
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    color: var(--color-burgundy);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 170px;
+  }
+
+  .demo-banner {
+    display: none !important;
+  }
+
+  .topbar-user .user-info {
+    display: none !important;
+  }
+
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 0.75rem;
   }
 
   .hero-section {

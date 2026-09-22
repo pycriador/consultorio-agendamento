@@ -98,11 +98,21 @@ class UIComponents {
             <span class="sidebar-brand-title">Dra. Marta Gelsi</span>
             <span class="sidebar-brand-subtitle">Dentista • CRO 71482</span>
           </div>
+          <button type="button" class="sidebar-close-btn" id="btn-close-sidebar" aria-label="Fechar menu lateral">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
         </div>
 
         <nav class="sidebar-nav">
           <span class="nav-section-title">Menu Principal</span>
           ${linksHtml}
+          
+          <div style="margin: var(--space-4) 0; border-top: 1px solid var(--color-border);"></div>
+          <span class="nav-section-title">Navegação Externa</span>
+          <a href="${basePath ? basePath + 'index.html' : '../index.html'}" class="sidebar-link">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            <span>Ver Site Público</span>
+          </a>
         </nav>
 
         <div class="sidebar-footer">
@@ -140,6 +150,14 @@ class UIComponents {
       });
     }
 
+    // Fechar menu mobile via botão X
+    const closeBtn = sidebarEl.querySelector("#btn-close-sidebar");
+    if (closeBtn) {
+      closeBtn.addEventListener("click", () => {
+        UIComponents.toggleMobileSidebar(false);
+      });
+    }
+
     // Toggle menu para mobile
     const backdrop = sidebarEl.querySelector("#sidebar-backdrop");
     if (backdrop) {
@@ -147,6 +165,16 @@ class UIComponents {
         UIComponents.toggleMobileSidebar(false);
       });
     }
+
+    // Fechar sidebar ao clicar em qualquer link no mobile
+    const sidebarLinks = sidebarEl.querySelectorAll(".sidebar-link");
+    sidebarLinks.forEach(link => {
+      link.addEventListener("click", () => {
+        if (window.innerWidth <= 1024) {
+          UIComponents.toggleMobileSidebar(false);
+        }
+      });
+    });
   }
 
   /**
@@ -188,19 +216,20 @@ class UIComponents {
           <button type="button" class="topbar-toggle-menu btn-icon" id="btn-toggle-drawer" aria-label="Abrir menu lateral">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
           </button>
-          <div>
-            <div class="breadcrumb">
+          <div class="topbar-title-wrapper">
+            <div class="breadcrumb topbar-breadcrumb" style="margin-bottom: 0;">
               <span>${pageCategory}</span>
               <span class="breadcrumb-separator">/</span>
               <span class="text-primary">${pageTitle}</span>
             </div>
+            <span class="topbar-mobile-title">${pageTitle}</span>
           </div>
         </div>
 
         <div class="topbar-right">
           <span class="demo-banner">Dados demonstrativos</span>
-          <div class="topbar-user">
-            <div class="user-avatar" title="${userName}">MG</div>
+          <div class="topbar-user" title="${userName} — ${userRole}">
+            <div class="user-avatar">MG</div>
             <div class="user-info">
               <span class="user-name">${userName}</span>
               <span class="user-role">${userRole}</span>
