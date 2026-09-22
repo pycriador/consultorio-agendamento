@@ -185,6 +185,9 @@
     </div>
   </div>
 
+  <!-- Menu Dropdown Flutuante de Ações dos Pacientes -->
+  <div id="patient-actions-dropdown" class="action-dropdown-menu" role="menu" aria-hidden="true"></div>
+
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/mock-data.js"></script>
@@ -341,13 +344,26 @@
     document.getElementById("filter-status").onchange = renderTable;
 
     // Gerenciador do Menu Dropdown Flutuante de Ações dos Pacientes
-    const dropdownMenu = document.getElementById("patient-actions-dropdown");
+    function getDropdownMenu() {
+      let menu = document.getElementById("patient-actions-dropdown");
+      if (!menu) {
+        menu = document.createElement("div");
+        menu.id = "patient-actions-dropdown";
+        menu.className = "action-dropdown-menu";
+        menu.setAttribute("role", "menu");
+        menu.setAttribute("aria-hidden", "true");
+        document.body.appendChild(menu);
+      }
+      return menu;
+    }
+
     let activeDropdownBtn = null;
 
     function closePatientDropdown() {
-      if (!dropdownMenu) return;
-      dropdownMenu.classList.remove("show", "drop-up");
-      dropdownMenu.setAttribute("aria-hidden", "true");
+      const menu = getDropdownMenu();
+      if (!menu) return;
+      menu.classList.remove("show", "drop-up");
+      menu.setAttribute("aria-hidden", "true");
       if (activeDropdownBtn) {
         activeDropdownBtn.classList.remove("active");
         activeDropdownBtn.setAttribute("aria-expanded", "false");
@@ -355,8 +371,11 @@
       }
     }
 
-    function openPatientDropdown(btn, patientId) {
-      const p = PatientsManager.getPatientById(patientId);
+    async function openPatientDropdown(btn, patientId) {
+      let p = PatientsManager.getPatientById(patientId);
+      if (!p) {
+        p = await PatientsManager.fetchPatientById(patientId);
+      }
       if (!p) return;
 
       if (activeDropdownBtn === btn) {
@@ -375,6 +394,7 @@
         ? `https://wa.me/55${phoneDigits}?text=${encodeURIComponent(`Olá ${p.name}, tudo bem? Aqui é do consultório da Dra. Marta Gelsi Dias.`)}`
         : `whatsapp.html`;
 
+      const dropdownMenu = getDropdownMenu();
       dropdownMenu.innerHTML = `
         <div class="action-dropdown-header">${p.name} • ${p.id}</div>
         <a href="paciente-detalhes.html?id=${p.id}" class="action-dropdown-item">
@@ -454,8 +474,9 @@
 
     // Fechar ao clicar fora, rolar ou pressionar ESC
     document.addEventListener("click", (e) => {
-      if (!dropdownMenu) return;
-      if (dropdownMenu.contains(e.target)) return;
+      const menu = getDropdownMenu();
+      if (!menu) return;
+      if (menu.contains(e.target)) return;
       if (e.target.closest(".btn-patient-actions")) return;
       closePatientDropdown();
     });
@@ -469,8 +490,5 @@
     // Carga inicial
     renderTable();
   </script>
-
-  <!-- Menu Dropdown Flutuante de Ações dos Pacientes -->
-  <div id="patient-actions-dropdown" class="action-dropdown-menu" role="menu" aria-hidden="true"></div>
 </body>
 </html>
