@@ -317,12 +317,14 @@ class DatabaseService {
           console.warn('Falha na consulta Supabase (services):', err);
         }
       }
-      return StorageService.get('services', []);
+      const fallback = typeof initialMockData !== 'undefined' ? initialMockData.services : [];
+      return StorageService.get('services', fallback);
     },
 
     async save(serviceData) {
       const client = DatabaseService.client;
-      const list = StorageService.get('services', []);
+      const fallback = typeof initialMockData !== 'undefined' ? initialMockData.services : [];
+      const list = StorageService.get('services', fallback);
       let isNew = !serviceData.id;
 
       if (isNew) {
@@ -359,7 +361,8 @@ class DatabaseService {
           console.error(err);
         }
       }
-      const list = StorageService.get('services', []).filter(s => s.id !== id);
+      const fallback = typeof initialMockData !== 'undefined' ? initialMockData.services : [];
+      const list = StorageService.get('services', fallback).filter(s => s.id !== id);
       StorageService.set('services', list);
       return true;
     }
@@ -382,21 +385,37 @@ class DatabaseService {
           console.warn('Falha na consulta Supabase (plans):', err);
         }
       }
-      return StorageService.get('plans', []);
+      const fallback = typeof initialMockData !== 'undefined' ? initialMockData.plans : [];
+      return StorageService.get('plans', fallback);
     },
 
     async save(planData) {
       const client = DatabaseService.client;
-      const list = StorageService.get('plans', []);
+      const fallback = typeof initialMockData !== 'undefined' ? initialMockData.plans : [];
+      const list = StorageService.get('plans', fallback);
       let isNew = !planData.id;
 
       if (isNew) {
         planData.id = 'PLN-' + String(list.length + 1).padStart(3, '0');
       }
 
+      // Normaliza features/services para consistência
+      if (planData.features && !planData.services) planData.services = planData.features;
+      if (planData.services && !planData.features) planData.features = planData.services;
+
       if (client) {
         try {
-          await client.from('plans').upsert(planData, { onConflict: 'id' });
+          // No banco salvamos payload compatível com schema SQL
+          const dbPayload = {
+            id: planData.id,
+            name: planData.name,
+            category: planData.category || planData.periodicity || 'Mensal',
+            price: planData.price || 'Consultar',
+            description: planData.description || '',
+            features: Array.isArray(planData.features) ? planData.features : (planData.features ? [planData.features] : []),
+            status: planData.status || (planData.active !== false ? 'active' : 'inactive')
+          };
+          await client.from('plans').upsert(dbPayload, { onConflict: 'id' });
         } catch (err) {
           console.error(err);
         }
@@ -420,7 +439,8 @@ class DatabaseService {
           console.error(err);
         }
       }
-      const list = StorageService.get('plans', []).filter(p => p.id !== id);
+      const fallback = typeof initialMockData !== 'undefined' ? initialMockData.plans : [];
+      const list = StorageService.get('plans', fallback).filter(p => p.id !== id);
       StorageService.set('plans', list);
       return true;
     }
@@ -443,12 +463,14 @@ class DatabaseService {
           console.warn('Falha ao obter configurações no Supabase:', err);
         }
       }
-      return StorageService.get('settings', {});
+      const fallback = typeof initialMockData !== 'undefined' ? initialMockData.settings : {};
+      return StorageService.get('settings', fallback);
     },
 
     async save(settingsData) {
       const client = DatabaseService.client;
-      const payload = { id: 'main', ...settingsData, updated_at: new Date().toISOString() };
+      const current = StorageService.get('settings', typeof initialMockData !== 'undefined' ? initialMockData.settings : {});
+      const payload = { id: 'main', ...current, ...settingsData, updated_at: new Date().toISOString() };
       if (client) {
         try {
           await client.from('clinic_settings').upsert(payload, { onConflict: 'id' });

@@ -245,6 +245,24 @@ O script completo de criação das tabelas, índices e políticas de Row Level S
 
 ---
 
+## 🔄 Sincronização Dinâmica & Recompilação da Landing Page
+
+Qualquer edição, adição, inativação ou alteração realizada no painel administrativo reflete diretamente na Landing Page (`index.html`) e nas páginas públicas (`servicos.html` e `contato.html`):
+
+1. **Sincronização em Tempo Real no Cliente (`js/landing-sync.js`):**
+   - **Serviços (`/pages/servicos-admin.html`):** Os procedimentos ativos são carregados diretamente do Supabase e renderizados na seção `#tratamentos`, vinculando ícones específicos das especialidades e botões direcionados para agendamento.
+   - **Planos & Combos (`/pages/planos.html`):** Novos planos ou alterações de valores, periodicidade e destaques ("Mais Procurado") sincronizam automaticamente na grade `#planos`.
+   - **Horários de Atendimento (`/pages/horarios.html`):** A grade de dias e expedientes configurada atualiza o rodapé oficial e a seção de contato.
+
+2. **Recompilação Estática para SEO / Deploy (`scripts/sync-landing.js`):**
+   - Caso deseje gerar/recompilar o HTML estático pré-renderizado diretamente nos arquivos `.html`:
+   ```bash
+   node scripts/sync-landing.js
+   ```
+   Este script busca os dados mais recentes do Supabase (ou base local), formata as estruturas semânticas e injeta-as diretamente no código de `index.html`, `pages/servicos.html` e `pages/contato.html`.
+
+---
+
 ## 🔑 Credenciais de Acesso (Área Interna)
 
 Para acessar o Painel Administrativo de Gestão Clínica:

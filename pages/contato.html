@@ -93,7 +93,7 @@
 
           <div>
             <h4 style="font-size: var(--font-size-sm); color: var(--color-text-muted); text-transform: uppercase; margin-bottom: var(--space-1);">Horário de Atendimento</h4>
-            <p class="text-secondary">Segunda a Sexta: 08:00 às 18:00<br>Sábado: 08:00 às 12:00</p>
+            <div id="contact-hours-container" class="text-secondary"><!-- CONTACT_HOURS --><div><strong>Segunda a Sexta:</strong> 08:00 às 18:00</div><div><strong>Sábado:</strong> 08:00 às 12:00</div><div><strong>Domingo:</strong> Fechado</div><!-- /CONTACT_HOURS --></div>
           </div>
         </div>
       </div>
@@ -117,10 +117,14 @@
     </div>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/mock-data.js"></script>
   <script src="../js/storage.js"></script>
+  <script src="../js/supabase-client.js"></script>
+  <script src="../js/database.js"></script>
   <script src="../js/components.js"></script>
   <script src="../js/navigation.js"></script>
+  <script src="../js/landing-sync.js"></script>
   <script>UIComponents.addFloatingWhatsApp();</script>
 </body>
 </html>

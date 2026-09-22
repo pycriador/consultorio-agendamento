@@ -167,59 +167,87 @@
           </p>
         </div>
 
-        <div class="treatments-grid">
-          <!-- 1. Clínica Geral -->
+        <div class="treatments-grid" id="landing-treatments-container">
           <article class="treatment-card">
             <div class="treatment-icon">
-              <img src="assets/icons/icone-clinica-geral.png" alt="Ícone Clínica Geral" class="treatment-icon-img">
+              <img src="assets/icons/icone-clinica-geral.png" alt="Ícone Avaliação Odontológica" class="treatment-icon-img">
             </div>
-            <h3 class="treatment-title">Clínica Geral</h3>
+            <span class="badge badge-neutral" style="margin-bottom: var(--space-2);">30 min</span>
+            <h3 class="treatment-title">Avaliação Odontológica</h3>
             <p class="treatment-text">
-              Cuidados odontológicos essenciais para manutenção e prevenção contínua: restaurações estéticas, diagnóstico e saúde bucal integrada.
+              Avaliação inicial completa e planejamento personalizado do tratamento.
             </p>
             <a href="pages/clinica-geral.html" class="btn btn-outline btn-sm">
               Conhecer tratamento →
             </a>
           </article>
 
-          <!-- 2. Limpeza -->
           <article class="treatment-card">
             <div class="treatment-icon">
               <img src="assets/icons/icone-limpeza.png" alt="Ícone Limpeza Dental" class="treatment-icon-img">
             </div>
+            <span class="badge badge-neutral" style="margin-bottom: var(--space-2);">45 min</span>
             <h3 class="treatment-title">Limpeza Dental</h3>
             <p class="treatment-text">
-              Profilaxia profissional profunda, raspagem e aplicação de flúor para prevenção de cáries, gengivite e proteção das gengivas.
+              Prevenção, higiene profunda e acompanhamento da saúde dos dentes e gengivas.
             </p>
             <a href="pages/limpeza.html" class="btn btn-outline btn-sm">
               Conhecer tratamento →
             </a>
           </article>
 
-          <!-- 3. Aparelho Ortodôntico -->
           <article class="treatment-card">
             <div class="treatment-icon">
               <img src="assets/icons/icone-aparelho-ortodontico.png" alt="Ícone Aparelho Ortodôntico" class="treatment-icon-img">
             </div>
+            <span class="badge badge-neutral" style="margin-bottom: var(--space-2);">60 min</span>
             <h3 class="treatment-title">Aparelho Ortodôntico</h3>
             <p class="treatment-text">
-              Alinhamento dental, correção da mordida e harmonização do sorriso com aparelhos estéticos, metálicos e alinhadores modernos.
+              Tratamentos ortodônticos para alinhamento e correção da posição dos dentes.
             </p>
             <a href="pages/aparelho-ortodontico.html" class="btn btn-outline btn-sm">
               Conhecer tratamento →
             </a>
           </article>
 
-          <!-- 4. Implantes Dentários -->
           <article class="treatment-card">
             <div class="treatment-icon">
-              <img src="assets/icons/icone-implantes.png" alt="Ícone Implantes Dentários" class="treatment-icon-img">
+              <img src="assets/icons/icone-aparelho-ortodontico.png" alt="Ícone Manutenção de Aparelho" class="treatment-icon-img">
             </div>
-            <h3 class="treatment-title">Implantes Dentários</h3>
+            <span class="badge badge-neutral" style="margin-bottom: var(--space-2);">30 min</span>
+            <h3 class="treatment-title">Manutenção de Aparelho</h3>
             <p class="treatment-text">
-              Soluções seguras para reposição de dentes com estética natural, recuperando plenamente a função mastigatória e sua autoconfiança.
+              Acompanhamento periódico, ajuste de tensão e troca de componentes ortodônticos.
+            </p>
+            <a href="pages/aparelho-ortodontico.html" class="btn btn-outline btn-sm">
+              Conhecer tratamento →
+            </a>
+          </article>
+
+          <article class="treatment-card">
+            <div class="treatment-icon">
+              <img src="assets/icons/icone-implantes.png" alt="Ícone Implante Dentário" class="treatment-icon-img">
+            </div>
+            <span class="badge badge-neutral" style="margin-bottom: var(--space-2);">90 min</span>
+            <h3 class="treatment-title">Implante Dentário</h3>
+            <p class="treatment-text">
+              Soluções seguras para reposição de dentes e recuperação da função e estética.
             </p>
             <a href="pages/implantes.html" class="btn btn-outline btn-sm">
+              Conhecer tratamento →
+            </a>
+          </article>
+
+          <article class="treatment-card">
+            <div class="treatment-icon">
+              <img src="assets/icons/icone-clinica-geral.png" alt="Ícone Retorno" class="treatment-icon-img">
+            </div>
+            <span class="badge badge-neutral" style="margin-bottom: var(--space-2);">20 min</span>
+            <h3 class="treatment-title">Retorno</h3>
+            <p class="treatment-text">
+              Consulta rápida de pós-procedimento e acompanhamento da evolução clínica.
+            </p>
+            <a href="pages/clinica-geral.html" class="btn btn-outline btn-sm">
               Conhecer tratamento →
             </a>
           </article>
@@ -286,39 +314,64 @@
         </div>
 
         <div class="plans-grid" id="landing-plans-container">
-          <div class="plan-card">
-            <h3 class="treatment-title">Avaliação Odontológica</h3>
+          <div class="plan-card" style="position: relative;">
+            <h3 class="treatment-title" style="margin-right: 0;">Avaliação Odontológica</h3>
             <span class="plan-price-label">Valor</span>
             <div class="plan-price-value">Consultar</div>
-            <p class="treatment-text">Avaliação inicial completa com diagnóstico clínico e planejamento individualizado.</p>
-            <a href="pages/agendar.html" class="btn btn-outline btn-sm">Agendar avaliação</a>
+            <p class="treatment-text">Avaliação inicial e planejamento do tratamento com radiografia e diagnóstico clínico.</p>
+            <div style="margin-bottom: var(--space-4); margin-top: var(--space-3); display: flex; flex-wrap: wrap; gap: 4px;">
+              <span class="badge badge-neutral" style="font-size: 0.7rem;">✓ Avaliação Odontológica</span>
+              <span class="badge badge-neutral" style="font-size: 0.7rem;">✓ Planejamento</span>
+            </div>
+            <a href="pages/agendar.html?plan=Avalia%C3%A7%C3%A3o%20Odontol%C3%B3gica" class="btn btn-outline btn-sm">
+              Agendar avaliação
+            </a>
           </div>
 
-          <div class="plan-card" style="border-color: var(--color-primary); box-shadow: var(--shadow-md);">
+          <div class="plan-card" style="border-color: var(--color-primary); box-shadow: var(--shadow-md); position: relative;">
             <div style="position: absolute; top: 14px; right: 14px;">
               <span class="badge badge-success">Mais Procurado</span>
             </div>
-            <h3 class="treatment-title">Limpeza Dental Preventiva</h3>
+            <h3 class="treatment-title" style="margin-right: 90px;">Limpeza Dental Preventiva</h3>
             <span class="plan-price-label">Valor</span>
             <div class="plan-price-value">Consultar</div>
-            <p class="treatment-text">Profilaxia profunda semestral para manutenção contínua e hálito puro.</p>
-            <a href="pages/agendar.html" class="btn btn-primary btn-sm">Agendar limpeza</a>
+            <p class="treatment-text">Limpeza profilática semestral e avaliação periódica contínua da saúde bucal.</p>
+            <div style="margin-bottom: var(--space-4); margin-top: var(--space-3); display: flex; flex-wrap: wrap; gap: 4px;">
+              <span class="badge badge-neutral" style="font-size: 0.7rem;">✓ Limpeza Dental</span>
+              <span class="badge badge-neutral" style="font-size: 0.7rem;">✓ Aplicação de Flúor</span>
+              <span class="badge badge-neutral" style="font-size: 0.7rem;">✓ Avaliação</span>
+            </div>
+            <a href="pages/agendar.html?plan=Limpeza%20Dental%20Preventiva" class="btn btn-primary btn-sm">
+              Agendar limpeza
+            </a>
           </div>
 
-          <div class="plan-card">
-            <h3 class="treatment-title">Aparelho Ortodôntico</h3>
+          <div class="plan-card" style="position: relative;">
+            <h3 class="treatment-title" style="margin-right: 0;">Aparelho Ortodôntico</h3>
             <span class="plan-price-label">Valor</span>
             <div class="plan-price-value">Consultar</div>
-            <p class="treatment-text">Documentação, instalação e manutenções periódicas com acompanhamento especializado.</p>
-            <a href="pages/agendar.html" class="btn btn-outline btn-sm">Consultar plano</a>
+            <p class="treatment-text">Avaliação, documentação e acompanhamento ortodôntico com manutenções regulares.</p>
+            <div style="margin-bottom: var(--space-4); margin-top: var(--space-3); display: flex; flex-wrap: wrap; gap: 4px;">
+              <span class="badge badge-neutral" style="font-size: 0.7rem;">✓ Instalação</span>
+              <span class="badge badge-neutral" style="font-size: 0.7rem;">✓ Manutenção Mensal</span>
+            </div>
+            <a href="pages/agendar.html?plan=Aparelho%20Ortod%C3%B4ntico" class="btn btn-outline btn-sm">
+              Agendar plano
+            </a>
           </div>
 
-          <div class="plan-card">
-            <h3 class="treatment-title">Implante Dentário</h3>
+          <div class="plan-card" style="position: relative;">
+            <h3 class="treatment-title" style="margin-right: 0;">Implante Dentário</h3>
             <span class="plan-price-label">Valor</span>
             <div class="plan-price-value">Consultar</div>
-            <p class="treatment-text">Planejamento tomográfico e cirúrgico para reabilitação com dentes fixos e naturais.</p>
-            <a href="pages/agendar.html" class="btn btn-outline btn-sm">Agendar consulta</a>
+            <p class="treatment-text">Avaliação tomográfica e planejamento cirúrgico para implante seguro e estético.</p>
+            <div style="margin-bottom: var(--space-4); margin-top: var(--space-3); display: flex; flex-wrap: wrap; gap: 4px;">
+              <span class="badge badge-neutral" style="font-size: 0.7rem;">✓ Avaliação Cirúrgica</span>
+              <span class="badge badge-neutral" style="font-size: 0.7rem;">✓ Planejamento de Implante</span>
+            </div>
+            <a href="pages/agendar.html?plan=Implante%20Dent%C3%A1rio" class="btn btn-outline btn-sm">
+              Agendar plano
+            </a>
           </div>
         </div>
       </div>
@@ -438,6 +491,20 @@
             <a href="login.html">Área interna administrativa</a>
           </div>
         </div>
+
+        <div>
+          <div class="footer-title">Horário de Atendimento</div>
+          <div id="landing-hours-container" class="footer-schedule-block" style="font-size: var(--font-size-sm); color: #fbcfe8; line-height: 1.6;">
+            <!-- LANDING_HOURS -->
+            <div style="display: flex; justify-content: space-between; gap: 12px; margin-bottom: 4px;"><strong style="color: #ffffff;">Segunda a Sexta:</strong> <span>08:00 às 18:00</span></div>
+            <div style="display: flex; justify-content: space-between; gap: 12px; margin-bottom: 4px;"><strong style="color: #ffffff;">Sábado:</strong> <span>08:00 às 12:00</span></div>
+            <div style="display: flex; justify-content: space-between; gap: 12px; margin-bottom: 4px;"><strong style="color: #ffffff;">Domingo:</strong> <span>Fechado</span></div>
+            <!-- /LANDING_HOURS -->
+          </div>
+          <div style="margin-top: var(--space-3);">
+            <a href="pages/agendar.html" class="btn btn-outline btn-sm" style="color: #ffffff; border-color: rgba(255,255,255,0.3); font-size: 0.75rem; padding: 4px 10px;">Agendar Consulta</a>
+          </div>
+        </div>
       </div>
 
       <div class="footer-bottom">
@@ -448,12 +515,16 @@
   </footer>
 
   <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/mock-data.js"></script>
   <script src="js/storage.js"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/database.js"></script>
   <script src="js/toast.js"></script>
   <script src="js/modal.js"></script>
   <script src="js/components.js"></script>
   <script src="js/navigation.js"></script>
+  <script src="js/landing-sync.js"></script>
   <script src="js/app.js"></script>
   <script>
     // Inicializar botão flutuante oficial

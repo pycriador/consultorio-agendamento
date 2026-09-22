@@ -256,9 +256,13 @@
         id: id || undefined,
         name: document.getElementById("plan-form-name").value.trim(),
         category: document.getElementById("plan-form-periodicity").value,
+        periodicity: document.getElementById("plan-form-periodicity").value,
         price: document.getElementById("plan-form-price").value.trim() || "Consultar",
         description: document.getElementById("plan-form-desc").value.trim(),
         features: servicesArr,
+        services: servicesArr,
+        highlight: document.getElementById("plan-form-highlight").checked,
+        active: document.getElementById("plan-form-active").checked,
         status: document.getElementById("plan-form-active").checked ? 'active' : 'inactive'
       };
 
