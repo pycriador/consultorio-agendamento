@@ -79,6 +79,8 @@
   <script src="../js/appointments.js"></script>
   <script src="../js/calendar.js"></script>
   <script>
+    AuthGuard.checkAuth();
+
     UIComponents.renderAdminSidebar("agenda", "");
     UIComponents.renderAdminTopbar("Agenda", "Planejamento");
 
