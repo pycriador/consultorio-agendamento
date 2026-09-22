@@ -214,6 +214,9 @@
     </div>
   </div>
 
+  <!-- Menu Dropdown Flutuante de Ações dos Agendamentos -->
+  <div id="appointment-actions-dropdown" class="action-dropdown-menu" role="menu" aria-hidden="true"></div>
+
   <!-- Supabase & Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/mock-data.js"></script>
@@ -228,8 +231,172 @@
   <script src="../js/patients.js"></script>
   <script src="../js/appointments.js"></script>
   <script>
+    AuthGuard.checkAuth();
+
     UIComponents.renderAdminSidebar("agendamentos", "");
     UIComponents.renderAdminTopbar("Agendamentos", "Recepção");
+
+    // Gerenciador do Menu Dropdown Flutuante de Ações dos Agendamentos
+    function getAptDropdownMenu() {
+      let menu = document.getElementById("appointment-actions-dropdown");
+      if (!menu) {
+        menu = document.createElement("div");
+        menu.id = "appointment-actions-dropdown";
+        menu.className = "action-dropdown-menu";
+        menu.setAttribute("role", "menu");
+        menu.setAttribute("aria-hidden", "true");
+        document.body.appendChild(menu);
+      }
+      return menu;
+    }
+
+    let activeAptDropdownBtn = null;
+
+    function closeAptDropdown() {
+      const menu = getAptDropdownMenu();
+      if (!menu) return;
+      menu.classList.remove("show", "drop-up");
+      menu.setAttribute("aria-hidden", "true");
+      if (activeAptDropdownBtn) {
+        activeAptDropdownBtn.classList.remove("active");
+        activeAptDropdownBtn.setAttribute("aria-expanded", "false");
+        activeAptDropdownBtn = null;
+      }
+    }
+
+    async function openAptDropdown(btn, aptId) {
+      let a = AppointmentsManager.getAppointmentById(aptId);
+      if (!a) {
+        a = await AppointmentsManager.fetchAppointmentById(aptId);
+      }
+      if (!a) return;
+
+      if (activeAptDropdownBtn === btn) {
+        closeAptDropdown();
+        return;
+      }
+
+      closeAptDropdown();
+
+      activeAptDropdownBtn = btn;
+      btn.classList.add("active");
+      btn.setAttribute("aria-expanded", "true");
+
+      const phoneDigits = (a.phone || "").replace(/\D/g, "");
+      const waMsg = `Olá, ${a.patientName}! Confirmamos sua consulta de ${a.service} com a Dra. Marta Gelsi Dias para o dia ${Navigation.formatDate(a.date)} às ${a.time}. Ficamos à disposição!`;
+      const waLink = phoneDigits
+        ? `https://wa.me/55${phoneDigits}?text=${encodeURIComponent(waMsg)}`
+        : `whatsapp.html?phone=&name=${encodeURIComponent(a.patientName)}`;
+
+      // Determinar próxima ação de status
+      let nextStatus = "Confirmado";
+      let statusActionLabel = "Confirmar Consulta";
+      let statusIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+
+      if (a.status === "Confirmado") {
+        nextStatus = "Concluído";
+        statusActionLabel = "Marcar como Concluído";
+        statusIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`;
+      } else if (a.status === "Concluído") {
+        nextStatus = "Confirmado";
+        statusActionLabel = "Reabrir como Confirmado";
+      }
+
+      const dropdownMenu = getAptDropdownMenu();
+      dropdownMenu.innerHTML = `
+        <div class="action-dropdown-header">${a.patientName} • ${a.id}</div>
+        
+        <button type="button" class="action-dropdown-item" id="dropdown-apt-edit">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+          <span>Editar Agendamento</span>
+        </button>
+
+        <button type="button" class="action-dropdown-item" id="dropdown-apt-toggle-status">
+          ${statusIcon}
+          <span>${statusActionLabel}</span>
+        </button>
+
+        <a href="agenda.html?date=${a.date}&view=day" class="action-dropdown-item">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+          <span>Ver na Agenda (Dia)</span>
+        </a>
+
+        ${a.patientId ? `
+        <a href="paciente-detalhes.html?id=${a.patientId}" class="action-dropdown-item">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          <span>Ver Prontuário</span>
+        </a>
+        ` : ''}
+
+        <a href="${waLink}" target="_blank" rel="noopener noreferrer" class="action-dropdown-item item-whatsapp">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+          <span>Enviar WhatsApp</span>
+        </a>
+
+        <div class="action-dropdown-divider"></div>
+
+        <button type="button" class="action-dropdown-item item-danger" id="dropdown-apt-delete">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+          <span>Excluir do Banco</span>
+        </button>
+      `;
+
+      // Eventos dos botões internos
+      document.getElementById("dropdown-apt-edit").onclick = () => {
+        closeAptDropdown();
+        openEditAppointmentModal(a.id);
+      };
+
+      document.getElementById("dropdown-apt-toggle-status").onclick = async () => {
+        closeAptDropdown();
+        await AppointmentsManager.updateStatus(a.id, nextStatus);
+        Toast.success(`Status da consulta atualizado para '${nextStatus}' no Supabase.`);
+        await renderTable();
+      };
+
+      document.getElementById("dropdown-apt-delete").onclick = () => {
+        closeAptDropdown();
+        Modal.confirm({
+          title: "Excluir Agendamento?",
+          message: `Tem certeza que deseja excluir permanentemente o agendamento de <strong>${a.patientName}</strong> (${a.service} às ${a.time})?<br><br><span class="text-xs text-danger">Esta ação removerá a consulta do banco de dados no Supabase e liberará a agenda.</span>`,
+          confirmText: "Sim, excluir",
+          cancelText: "Cancelar",
+          danger: true,
+          onConfirm: async () => {
+            await AppointmentsManager.deleteAppointment(a.id);
+            Toast.success("Agendamento excluído do Supabase com sucesso.");
+            await renderTable();
+          }
+        });
+      };
+
+      // Posicionamento inteligente (anti-clipping)
+      dropdownMenu.classList.add("show");
+      dropdownMenu.setAttribute("aria-hidden", "false");
+
+      const rect = btn.getBoundingClientRect();
+      const menuHeight = dropdownMenu.offsetHeight || 250;
+      const menuWidth = dropdownMenu.offsetWidth || 230;
+
+      const spaceBelow = window.innerHeight - rect.bottom;
+      if (spaceBelow < menuHeight + 12 && rect.top > menuHeight) {
+        dropdownMenu.classList.add("drop-up");
+        dropdownMenu.style.top = `${rect.top - menuHeight - 6}px`;
+      } else {
+        dropdownMenu.classList.remove("drop-up");
+        dropdownMenu.style.top = `${rect.bottom + 6}px`;
+      }
+
+      let rightPos = window.innerWidth - rect.right;
+      if (rightPos < 10) rightPos = 10;
+      if (rect.right - menuWidth < 10) {
+        dropdownMenu.style.left = "10px";
+        dropdownMenu.style.right = "auto";
+      } else {
+        dropdownMenu.style.right = `${rightPos}px`;
+        dropdownMenu.style.left = "auto";
+      }
+    }
 
     async function renderTable() {
       const search = document.getElementById("filter-apt-search").value.toLowerCase().trim();
@@ -251,6 +418,7 @@
         list = list.filter(a => a.origin === origin);
       }
 
+      closeAptDropdown();
       const tbody = document.getElementById("appointments-tbody");
       if (list.length === 0) {
         tbody.innerHTML = `<tr><td colspan="7">${UIComponents.renderEmptyState("Nenhum agendamento localizado", "Ajuste os filtros ou crie um novo agendamento.")}</td></tr>`;
@@ -265,57 +433,29 @@
           </td>
           <td>
             <div class="text-bold">${a.patientName}</div>
-            <span class="text-xs text-muted">${a.patientId}</span>
+            <span class="text-xs text-muted">${a.patientId || '—'}</span>
           </td>
           <td>${a.service}</td>
           <td>${a.professional || "Dra. Marta Gelsi Dias"}</td>
           <td>${UIComponents.renderStatusBadge(a.status)}</td>
-          <td><span class="badge badge-neutral">${a.origin}</span></td>
+          <td><span class="badge badge-neutral">${a.origin || 'Online'}</span></td>
           <td class="text-right">
-            <div class="flex justify-end gap-1">
-              <button type="button" class="btn btn-ghost btn-sm btn-status-toggle" data-id="${a.id}" data-status="${a.status}" title="Alterar status rápido">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              </button>
-              <a href="whatsapp.html?phone=&name=${encodeURIComponent(a.patientName)}" class="btn btn-ghost btn-sm" title="Enviar WhatsApp" style="color: #25d366;">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-              </a>
-              <button type="button" class="btn btn-ghost btn-sm btn-delete-apt" data-id="${a.id}" data-name="${a.patientName}" title="Cancelar" style="color: var(--color-danger);">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            <div class="dropdown-wrapper">
+              <button type="button" class="btn-patient-actions btn-apt-actions" data-id="${a.id}" aria-expanded="false" title="Opções para o agendamento de ${a.patientName}">
+                <span>Ações</span>
+                <svg class="dropdown-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
               </button>
             </div>
           </td>
         </tr>
       `).join("");
 
-      // Alterar status rápido no Supabase
-      tbody.querySelectorAll(".btn-status-toggle").forEach(btn => {
-        btn.onclick = async () => {
+      // Bind botões de ação dropdown
+      tbody.querySelectorAll(".btn-apt-actions").forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
           const id = btn.getAttribute("data-id");
-          const cur = btn.getAttribute("data-status");
-          const next = cur === "Confirmado" ? "Concluído" : (cur === "Pendente" ? "Confirmado" : "Confirmado");
-          await AppointmentsManager.updateStatus(id, next);
-          Toast.info(`Status do agendamento alterado para ${next} no Supabase.`);
-          await renderTable();
-        };
-      });
-
-      // Exclusão / Cancelamento no Supabase
-      tbody.querySelectorAll(".btn-delete-apt").forEach(btn => {
-        btn.onclick = () => {
-          const id = btn.getAttribute("data-id");
-          const name = btn.getAttribute("data-name");
-          Modal.confirm({
-            title: "Remover agendamento?",
-            message: `Deseja remover o agendamento de "${name}" (${id}) permanentemente do banco de dados?`,
-            confirmText: "Sim, remover",
-            cancelText: "Cancelar",
-            danger: true,
-            onConfirm: async () => {
-              await AppointmentsManager.deleteAppointment(id);
-              Toast.success("Agendamento excluído do Supabase com sucesso.");
-              await renderTable();
-            }
-          });
+          openAptDropdown(btn, id);
         };
       });
     }
@@ -343,7 +483,7 @@
       }
     }
 
-    // Abertura do modal
+    // Abertura do modal para novo agendamento
     const modalEl = document.getElementById("appointment-modal");
     const formEl = document.getElementById("appointment-form");
 
@@ -354,6 +494,35 @@
       document.getElementById("apt-modal-title").innerText = "Novo Agendamento";
       Modal.open(modalEl);
     };
+
+    // Abertura do modal para editar agendamento
+    async function openEditAppointmentModal(aptId) {
+      await populateFormSelects();
+      const apt = AppointmentsManager.getAppointmentById(aptId) || await AppointmentsManager.fetchAppointmentById(aptId);
+      if (!apt) return;
+
+      formEl.reset();
+      document.getElementById("apt-form-id").value = apt.id;
+      document.getElementById("apt-modal-title").innerText = `Editar Agendamento (${apt.id})`;
+
+      const patientSelect = document.getElementById("apt-form-patient");
+      if (apt.patientId) {
+        patientSelect.value = apt.patientId;
+      }
+      
+      const serviceSelect = document.getElementById("apt-form-service");
+      if (apt.service) {
+        serviceSelect.value = apt.service;
+      }
+
+      document.getElementById("apt-form-date").value = apt.date || "";
+      document.getElementById("apt-form-time").value = apt.time || "";
+      document.getElementById("apt-form-duration").value = apt.duration || "45 min";
+      document.getElementById("apt-form-status").value = apt.status || "Confirmado";
+      document.getElementById("apt-form-notes").value = apt.notes || "";
+
+      Modal.open(modalEl);
+    }
 
     // Submissão do agendamento no Supabase
     formEl.onsubmit = async (e) => {
@@ -367,6 +536,7 @@
       const patientId = selectedOption ? selectedOption.value : null;
       const patientName = selectedOption ? selectedOption.getAttribute("data-name") : "Paciente";
 
+      const formId = document.getElementById("apt-form-id").value;
       const service = document.getElementById("apt-form-service").value;
       const date = document.getElementById("apt-form-date").value;
       const time = document.getElementById("apt-form-time").value;
@@ -375,6 +545,7 @@
       const notes = document.getElementById("apt-form-notes").value.trim();
 
       const aptData = {
+        id: formId || undefined,
         patientId,
         patientName,
         service,
@@ -383,18 +554,20 @@
         time,
         duration,
         status,
-        origin: "Administrativo",
+        origin: formId ? "Edição" : "Administrativo",
         notes
       };
 
       try {
         await AppointmentsManager.saveAppointment(aptData);
         Modal.close(modalEl);
-        Toast.success("Agendamento gravado com sucesso no Supabase!");
+        Toast.success(formId ? "Agendamento atualizado com sucesso no Supabase!" : "Agendamento gravado com sucesso no Supabase!");
         await renderTable();
 
-        // Abrir modal de confirmação com timeline
-        Modal.open(document.getElementById("apt-timeline-modal"));
+        // Se for novo, abre timeline de confirmação
+        if (!formId) {
+          Modal.open(document.getElementById("apt-timeline-modal"));
+        }
       } catch (err) {
         console.error(err);
         Toast.error("Erro ao salvar agendamento no Supabase.");
@@ -408,6 +581,36 @@
     document.getElementById("filter-apt-search").oninput = renderTable;
     document.getElementById("filter-apt-status").onchange = renderTable;
     document.getElementById("filter-apt-origin").onchange = renderTable;
+
+    // Suporte a parâmetro de URL (?newFor=PAT-XXX)
+    const urlParams = new URLSearchParams(window.location.search);
+    const newForPatient = urlParams.get("newFor");
+    if (newForPatient) {
+      setTimeout(async () => {
+        await populateFormSelects();
+        formEl.reset();
+        document.getElementById("apt-form-id").value = "";
+        document.getElementById("apt-modal-title").innerText = "Novo Agendamento";
+        const patientSelect = document.getElementById("apt-form-patient");
+        patientSelect.value = newForPatient;
+        Modal.open(modalEl);
+      }, 200);
+    }
+
+    // Fechar ao clicar fora, rolar ou pressionar ESC
+    document.addEventListener("click", (e) => {
+      const menu = getAptDropdownMenu();
+      if (!menu) return;
+      if (menu.contains(e.target)) return;
+      if (e.target.closest(".btn-apt-actions")) return;
+      closeAptDropdown();
+    });
+
+    window.addEventListener("scroll", closeAptDropdown, true);
+    window.addEventListener("resize", closeAptDropdown);
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeAptDropdown();
+    });
 
     // Carga inicial
     renderTable();
