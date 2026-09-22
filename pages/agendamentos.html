@@ -214,11 +214,16 @@
     </div>
   </div>
 
+  <!-- Supabase & Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/mock-data.js"></script>
   <script src="../js/storage.js"></script>
+  <script src="../js/supabase-client.js"></script>
+  <script src="../js/database.js"></script>
   <script src="../js/toast.js"></script>
   <script src="../js/modal.js"></script>
   <script src="../js/components.js"></script>
+  <script src="../js/auth.js"></script>
   <script src="../js/navigation.js"></script>
   <script src="../js/patients.js"></script>
   <script src="../js/appointments.js"></script>
@@ -226,12 +231,12 @@
     UIComponents.renderAdminSidebar("agendamentos", "");
     UIComponents.renderAdminTopbar("Agendamentos", "Recepção");
 
-    function renderTable() {
+    async function renderTable() {
       const search = document.getElementById("filter-apt-search").value.toLowerCase().trim();
       const status = document.getElementById("filter-apt-status").value;
       const origin = document.getElementById("filter-apt-origin").value;
 
-      let list = AppointmentsManager.getAppointments();
+      let list = await AppointmentsManager.fetchAppointments();
 
       if (search) {
         list = list.filter(a => 
@@ -282,73 +287,85 @@
         </tr>
       `).join("");
 
-      // Alterar status rápido
+      // Alterar status rápido no Supabase
       tbody.querySelectorAll(".btn-status-toggle").forEach(btn => {
-        btn.onclick = () => {
+        btn.onclick = async () => {
           const id = btn.getAttribute("data-id");
           const cur = btn.getAttribute("data-status");
           const next = cur === "Confirmado" ? "Concluído" : (cur === "Pendente" ? "Confirmado" : "Confirmado");
-          AppointmentsManager.updateStatus(id, next);
-          Toast.info(`Status do agendamento alterado para ${next}`);
-          renderTable();
+          await AppointmentsManager.updateStatus(id, next);
+          Toast.info(`Status do agendamento alterado para ${next} no Supabase.`);
+          await renderTable();
         };
       });
 
-      // Exclusão / Cancelamento
+      // Exclusão / Cancelamento no Supabase
       tbody.querySelectorAll(".btn-delete-apt").forEach(btn => {
         btn.onclick = () => {
           const id = btn.getAttribute("data-id");
           const name = btn.getAttribute("data-name");
           Modal.confirm({
             title: "Remover agendamento?",
-            message: `Deseja remover o agendamento de "${name}" (${id}) dos dados demonstrativos?`,
+            message: `Deseja remover o agendamento de "${name}" (${id}) permanentemente do banco de dados?`,
             confirmText: "Sim, remover",
             cancelText: "Cancelar",
             danger: true,
-            onConfirm: () => {
-              AppointmentsManager.deleteAppointment(id);
-              Toast.success("Agendamento removido com sucesso.");
-              renderTable();
+            onConfirm: async () => {
+              await AppointmentsManager.deleteAppointment(id);
+              Toast.success("Agendamento excluído do Supabase com sucesso.");
+              await renderTable();
             }
           });
         };
       });
     }
 
-    // Povoar selects do formulário
-    function populateFormSelects() {
-      const patients = PatientsManager.getPatients();
+    // Povoar selects do formulário com dados do Supabase
+    async function populateFormSelects() {
+      const patients = await PatientsManager.fetchPatients();
       const patientSelect = document.getElementById("apt-form-patient");
-      patientSelect.innerHTML = patients.map(p => `
-        <option value="${p.id}" data-name="${p.name}">${p.name} (${p.phone})</option>
-      `).join("");
+      if (patients.length === 0) {
+        patientSelect.innerHTML = `<option value="">Nenhum paciente cadastrado</option>`;
+      } else {
+        patientSelect.innerHTML = patients.map(p => `
+          <option value="${p.id}" data-name="${p.name}">${p.name} (${p.phone || 'Sem tel'})</option>
+        `).join("");
+      }
 
-      const services = StorageService.get("services", []);
+      const services = await DatabaseService.services.getAll();
       const serviceSelect = document.getElementById("apt-form-service");
-      serviceSelect.innerHTML = services.map(s => `
-        <option value="${s.name}">${s.name} (${s.duration})</option>
-      `).join("");
+      if (services.length === 0) {
+        serviceSelect.innerHTML = `<option value="Clínica Geral">Clínica Geral (30 min)</option>`;
+      } else {
+        serviceSelect.innerHTML = services.map(s => `
+          <option value="${s.name}">${s.name} (${s.duration || '30 min'})</option>
+        `).join("");
+      }
     }
 
     // Abertura do modal
     const modalEl = document.getElementById("appointment-modal");
     const formEl = document.getElementById("appointment-form");
 
-    document.getElementById("btn-open-appointment-modal").onclick = () => {
-      populateFormSelects();
+    document.getElementById("btn-open-appointment-modal").onclick = async () => {
+      await populateFormSelects();
       formEl.reset();
       document.getElementById("apt-form-id").value = "";
       document.getElementById("apt-modal-title").innerText = "Novo Agendamento";
       Modal.open(modalEl);
     };
 
-    // Submissão do agendamento
-    formEl.onsubmit = (e) => {
+    // Submissão do agendamento no Supabase
+    formEl.onsubmit = async (e) => {
       e.preventDefault();
+      const submitBtn = formEl.querySelector("button[type='submit']");
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<span class="spinner spinner-sm"></span> Salvando no Supabase...`;
+
       const patientSelect = document.getElementById("apt-form-patient");
       const selectedOption = patientSelect.options[patientSelect.selectedIndex];
-      const patientId = selectedOption.value;
-      const patientName = selectedOption.getAttribute("data-name");
+      const patientId = selectedOption ? selectedOption.value : null;
+      const patientName = selectedOption ? selectedOption.getAttribute("data-name") : "Paciente";
 
       const service = document.getElementById("apt-form-service").value;
       const date = document.getElementById("apt-form-date").value;
@@ -370,12 +387,21 @@
         notes
       };
 
-      AppointmentsManager.saveAppointment(aptData);
-      Modal.close(modalEl);
-      renderTable();
+      try {
+        await AppointmentsManager.saveAppointment(aptData);
+        Modal.close(modalEl);
+        Toast.success("Agendamento gravado com sucesso no Supabase!");
+        await renderTable();
 
-      // Abrir modal de confirmação com timeline
-      Modal.open(document.getElementById("apt-timeline-modal"));
+        // Abrir modal de confirmação com timeline
+        Modal.open(document.getElementById("apt-timeline-modal"));
+      } catch (err) {
+        console.error(err);
+        Toast.error("Erro ao salvar agendamento no Supabase.");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = "Salvar Agendamento";
+      }
     };
 
     // Filtros

@@ -186,18 +186,25 @@
   </div>
 
   <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/mock-data.js"></script>
   <script src="../js/storage.js"></script>
+  <script src="../js/supabase-client.js"></script>
+  <script src="../js/database.js"></script>
   <script src="../js/toast.js"></script>
   <script src="../js/modal.js"></script>
   <script src="../js/components.js"></script>
+  <script src="../js/auth.js"></script>
   <script src="../js/navigation.js"></script>
   <script src="../js/patients.js"></script>
   <script>
     UIComponents.renderAdminSidebar("pacientes", "");
     UIComponents.renderAdminTopbar("Pacientes", "Gestão Clínica");
 
-    function renderTable() {
+    async function renderTable() {
+      // Busca atualizada do banco Supabase
+      await PatientsManager.fetchPatients();
+
       const search = document.getElementById("filter-search").value;
       const phone = document.getElementById("filter-phone").value;
       const status = document.getElementById("filter-status").value;
@@ -266,8 +273,8 @@
       Modal.open(modalEl);
     };
 
-    function openEditModal(id) {
-      const p = PatientsManager.getPatientById(id);
+    async function openEditModal(id) {
+      const p = await PatientsManager.fetchPatientById(id);
       if (!p) return;
       document.getElementById("patient-form-id").value = p.id;
       document.getElementById("patient-modal-title").innerText = `Editar Paciente (${p.id})`;
@@ -287,9 +294,13 @@
       Modal.open(modalEl);
     }
 
-    // Salvar paciente
-    formEl.onsubmit = (e) => {
+    // Salvar paciente no Supabase
+    formEl.onsubmit = async (e) => {
       e.preventDefault();
+      const saveBtn = document.getElementById("btn-save-patient");
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = `<span class="spinner spinner-sm"></span> Salvando no Supabase...`;
+
       const id = document.getElementById("patient-form-id").value;
       const patientData = {
         id: id || undefined,
@@ -310,10 +321,18 @@
         notes: document.getElementById("patient-form-notes").value.trim()
       };
 
-      const res = PatientsManager.savePatient(patientData);
-      Modal.close(modalEl);
-      Toast.success(res.isNew ? "Paciente cadastrado com sucesso!" : "Dados do paciente atualizados!");
-      renderTable();
+      try {
+        const res = await PatientsManager.savePatient(patientData);
+        Modal.close(modalEl);
+        Toast.success(res.isNew ? "Paciente cadastrado no Supabase com sucesso!" : "Dados do paciente atualizados no Supabase!");
+        await renderTable();
+      } catch (err) {
+        console.error(err);
+        Toast.error("Erro ao salvar dados no Supabase.");
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerText = "Salvar Paciente";
+      }
     };
 
     // Eventos de filtro
@@ -391,14 +410,14 @@
         closePatientDropdown();
         Modal.confirm({
           title: "Excluir paciente?",
-          message: `Esta ação removerá o paciente "${p.name}" (${p.id}) dos dados demonstrativos.`,
+          message: `Esta ação removerá o paciente "${p.name}" (${p.id}) permanentemente do banco de dados.`,
           confirmText: "Sim, excluir",
           cancelText: "Cancelar",
           danger: true,
-          onConfirm: () => {
-            PatientsManager.deletePatient(p.id);
-            Toast.success("Paciente excluído dos dados demonstrativos.");
-            renderTable();
+          onConfirm: async () => {
+            await PatientsManager.deletePatient(p.id);
+            Toast.success("Paciente excluído do Supabase com sucesso.");
+            await renderTable();
           }
         });
       };

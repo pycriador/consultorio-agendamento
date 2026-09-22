@@ -75,24 +75,27 @@
         <p class="text-xs text-muted" style="text-transform: uppercase; letter-spacing: 0.06em; margin-top: 6px;">Painel Administrativo Interno</p>
       </div>
 
-      <div class="mock-credential-hint">
-        <strong>Credenciais de Demonstração (Mock):</strong>
-        <span>E-mail: <code>admin@demo.com</code></span>
-        <span>Senha: <code>123456</code></span>
+      <div class="mock-credential-hint" style="background-color: #fdf2f8; border-color: #fbcfe8; color: var(--color-burgundy);">
+        <strong style="color: var(--color-primary); display: flex; align-items: center; gap: 4px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          Autenticação Segura via Supabase Auth:
+        </strong>
+        <span>E-mail: <code>admin@dramartagelsi.com.br</code></span>
+        <span>Senha: <code>Marta@2026Admin</code> <em style="font-size: 0.6875rem; color: var(--color-text-muted);">(criptografada no banco)</em></span>
       </div>
 
       <form id="login-form">
         <div class="form-group">
           <label class="form-label form-label-required" for="login-email">E-mail</label>
-          <input type="email" id="login-email" class="form-input" value="admin@demo.com" required autocomplete="username">
+          <input type="email" id="login-email" class="form-input" value="admin@dramartagelsi.com.br" required autocomplete="username">
         </div>
 
         <div class="form-group">
           <div class="flex items-center justify-between">
             <label class="form-label form-label-required" for="login-password">Senha</label>
-            <button type="button" class="btn-ghost text-xs text-primary" id="btn-forgot-password">Esqueci minha senha</button>
+            <button type="button" class="btn-ghost text-xs text-primary" id="btn-forgot-password">Preencher dados padrão</button>
           </div>
-          <input type="password" id="login-password" class="form-input" value="123456" required autocomplete="current-password">
+          <input type="password" id="login-password" class="form-input" value="Marta@2026Admin" required autocomplete="current-password">
         </div>
 
         <button type="submit" class="btn btn-primary" id="btn-login-submit" style="width: 100%; margin-top: var(--space-4);">
@@ -106,55 +109,44 @@
     </div>
   </div>
 
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/mock-data.js"></script>
   <script src="js/storage.js"></script>
+  <script src="js/supabase-client.js"></script>
   <script src="js/toast.js"></script>
   <script src="js/modal.js"></script>
   <script src="js/navigation.js"></script>
   <script>
     document.getElementById("btn-forgot-password").addEventListener("click", () => {
-      Modal.confirm({
-        title: "Recuperação de Acesso",
-        message: "Por se tratar de um mockup demonstrativo, o acesso é liberado com as credenciais mock fornecidas: admin@demo.com e senha 123456.",
-        confirmText: "Preencher Automaticamente",
-        cancelText: "Fechar",
-        onConfirm: () => {
-          document.getElementById("login-email").value = "admin@demo.com";
-          document.getElementById("login-password").value = "123456";
-          Toast.info("Credenciais preenchidas.");
-        }
-      });
+      document.getElementById("login-email").value = "admin@dramartagelsi.com.br";
+      document.getElementById("login-password").value = "Marta@2026Admin";
+      Toast.info("Credenciais padrão preenchidas.");
     });
 
-    document.getElementById("login-form").addEventListener("submit", (e) => {
+    document.getElementById("login-form").addEventListener("submit", async (e) => {
       e.preventDefault();
       const email = document.getElementById("login-email").value.trim();
       const password = document.getElementById("login-password").value.trim();
 
       const btn = document.getElementById("btn-login-submit");
       btn.disabled = true;
-      btn.innerHTML = `<span class="spinner spinner-sm"></span> Autenticando...`;
+      btn.innerHTML = `<span class="spinner spinner-sm"></span> Autenticando no Supabase...`;
 
-      setTimeout(() => {
-        // Validação mock
-        if (email === "admin@demo.com" && password === "123456") {
-          StorageService.setSession({
-            id: "USR-001",
-            name: "Dra. Marta Gelsi Dias",
-            email: "admin@demo.com",
-            role: "Cirurgiã-Dentista / Administradora"
-          });
-
-          Toast.success("Login realizado com sucesso! Redirecionando...");
-          setTimeout(() => {
-            window.location.href = "pages/dashboard.html";
-          }, 600);
-        } else {
-          btn.disabled = false;
-          btn.innerText = "Entrar no Sistema";
-          Toast.error("Credenciais inválidas. Utilize admin@demo.com e senha 123456.");
-        }
-      }, 500);
+      try {
+        await AuthService.login(email, password);
+        Toast.success("Login autenticado com sucesso no Supabase! Redirecionando...");
+        const redirectUrl = sessionStorage.getItem("redirect_after_login") || "pages/dashboard.html";
+        sessionStorage.removeItem("redirect_after_login");
+        setTimeout(() => {
+          window.location.href = redirectUrl;
+        }, 600);
+      } catch (err) {
+        console.error("Falha no login:", err);
+        btn.disabled = false;
+        btn.innerText = "Entrar no Sistema";
+        Toast.error(err.message || "E-mail ou senha incorretos no Supabase.");
+      }
     });
   </script>
 </body>

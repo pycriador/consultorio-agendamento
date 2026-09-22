@@ -217,15 +217,33 @@
     </main>
   </div>
 
+  <!-- Supabase & Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/mock-data.js"></script>
   <script src="../js/storage.js"></script>
+  <script src="../js/supabase-client.js"></script>
+  <script src="../js/database.js"></script>
   <script src="../js/toast.js"></script>
   <script src="../js/modal.js"></script>
   <script src="../js/components.js"></script>
+  <script src="../js/auth.js"></script>
   <script src="../js/navigation.js"></script>
   <script>
     UIComponents.renderAdminSidebar("configuracoes", "");
     UIComponents.renderAdminTopbar("Configurações", "Sistema");
+
+    // Carregar configurações do Supabase
+    async function loadSettings() {
+      const settings = await DatabaseService.settings.get();
+      if (settings.clinic_name || settings.clinicName) {
+        document.getElementById("cfg-clinic-name").value = settings.clinic_name || settings.clinicName || "";
+        document.getElementById("cfg-prof-name").value = settings.dentist_name || settings.professionalName || "";
+        document.getElementById("cfg-phone").value = settings.phone || "";
+        document.getElementById("cfg-whatsapp").value = settings.whatsapp || settings.phoneFormatted || "";
+        document.getElementById("cfg-cro").value = settings.cro || "";
+        document.getElementById("cfg-email").value = settings.email || "";
+      }
+    }
 
     // Gerenciador de abas
     document.querySelectorAll(".config-tab-btn").forEach(btn => {
@@ -238,24 +256,34 @@
       };
     });
 
-    // Salvar configurações
-    document.getElementById("btn-save-settings").onclick = () => {
-      const settings = StorageService.get("settings", initialMockData.settings);
-      settings.clinicName = document.getElementById("cfg-clinic-name").value.trim();
-      settings.professionalName = document.getElementById("cfg-prof-name").value.trim();
-      settings.phone = document.getElementById("cfg-phone").value.trim();
-      settings.phoneFormatted = document.getElementById("cfg-whatsapp").value.trim();
-      settings.cro = document.getElementById("cfg-cro").value.trim();
-      settings.email = document.getElementById("cfg-email").value.trim();
-      settings.address = document.getElementById("cfg-address").value.trim();
-      settings.defaultDuration = document.getElementById("cfg-default-duration").value;
-      settings.intervalDuration = document.getElementById("cfg-interval").value;
-      settings.cancelNoticeHours = document.getElementById("cfg-cancel-notice").value;
+    // Salvar configurações no Supabase
+    document.getElementById("btn-save-settings").onclick = async () => {
+      const btn = document.getElementById("btn-save-settings");
+      btn.disabled = true;
+      btn.innerHTML = `<span class="spinner spinner-sm"></span> Salvando no Supabase...`;
 
-      StorageService.set("settings", settings);
-      StorageService.logActivity("UPDATE_SETTINGS", "Configurações gerais da clínica atualizadas", "CONFIG-SYS");
-      Toast.success("Configurações salvas com sucesso no LocalStorage!");
+      const payload = {
+        clinic_name: document.getElementById("cfg-clinic-name").value.trim(),
+        dentist_name: document.getElementById("cfg-prof-name").value.trim(),
+        phone: document.getElementById("cfg-phone").value.trim(),
+        whatsapp: document.getElementById("cfg-whatsapp").value.trim(),
+        cro: document.getElementById("cfg-cro").value.trim(),
+        email: document.getElementById("cfg-email").value.trim()
+      };
+
+      try {
+        await DatabaseService.settings.save(payload);
+        Toast.success("Configurações salvas com sucesso no Supabase!");
+      } catch (err) {
+        console.error(err);
+        Toast.error("Erro ao salvar configurações no Supabase.");
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "Salvar Alterações";
+      }
     };
+
+    loadSettings();
   </script>
 </body>
 </html>

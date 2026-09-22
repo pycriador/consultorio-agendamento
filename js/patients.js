@@ -1,6 +1,6 @@
 /**
  * PATIENTS MODULE
- * Gestão de pacientes, busca, filtros e persistência no LocalStorage
+ * Gestão de pacientes, busca, filtros e persistência no Supabase + LocalStorage
  */
 
 class PatientsManager {
@@ -8,24 +8,40 @@ class PatientsManager {
     return StorageService.get("patients", []);
   }
 
+  static async fetchPatients() {
+    if (window.DatabaseService) {
+      return await DatabaseService.patients.getAll();
+    }
+    return this.getPatients();
+  }
+
   static getPatientById(id) {
     const list = this.getPatients();
     return list.find(p => p.id === id) || null;
   }
 
-  static savePatient(patientData) {
+  static async fetchPatientById(id) {
+    if (window.DatabaseService) {
+      return await DatabaseService.patients.getById(id);
+    }
+    return this.getPatientById(id);
+  }
+
+  static async savePatient(patientData) {
+    if (window.DatabaseService) {
+      return await DatabaseService.patients.save(patientData);
+    }
+
     const list = this.getPatients();
     let isNew = false;
 
     if (patientData.id) {
-      // Edição
       const index = list.findIndex(p => p.id === patientData.id);
       if (index !== -1) {
         list[index] = { ...list[index], ...patientData };
         StorageService.logActivity("UPDATE_PATIENT", `Paciente atualizado: ${patientData.name}`, patientData.id);
       }
     } else {
-      // Novo paciente
       isNew = true;
       patientData.id = "PAT-" + String(list.length + 1).padStart(3, "0");
       patientData.lastAppointment = "—";
@@ -37,13 +53,17 @@ class PatientsManager {
     return { success: true, patient: patientData, isNew };
   }
 
-  static deletePatient(id) {
+  static async deletePatient(id) {
+    if (window.DatabaseService) {
+      return await DatabaseService.patients.delete(id);
+    }
+
     const list = this.getPatients();
     const patient = list.find(p => p.id === id);
     const filtered = list.filter(p => p.id !== id);
     StorageService.set("patients", filtered);
     if (patient) {
-      StorageService.logActivity("DELETE_PATIENT", `Paciente excluído dos dados demonstrativos: ${patient.name}`, id);
+      StorageService.logActivity("DELETE_PATIENT", `Paciente excluído: ${patient.name}`, id);
     }
     return true;
   }

@@ -114,29 +114,34 @@
     </main>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/mock-data.js"></script>
   <script src="../js/storage.js"></script>
+  <script src="../js/supabase-client.js"></script>
+  <script src="../js/database.js"></script>
   <script src="../js/toast.js"></script>
   <script src="../js/modal.js"></script>
   <script src="../js/components.js"></script>
+  <script src="../js/auth.js"></script>
   <script src="../js/navigation.js"></script>
   <script src="../js/patients.js"></script>
   <script>
     UIComponents.renderAdminSidebar("pacientes", "");
     UIComponents.renderAdminTopbar("Detalhes do Paciente", "Prontuário");
 
-    // Identificar ID pela query string (?id=PAT-001)
-    const urlParams = new URLSearchParams(window.location.search);
-    const patientId = urlParams.get("id") || "PAT-001";
-    const patient = PatientsManager.getPatientById(patientId);
+    async function loadPatientDetails() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const patientId = urlParams.get("id") || "PAT-001";
+      const patient = await DatabaseService.patients.getById(patientId);
 
-    if (!patient) {
-      document.querySelector(".admin-content").innerHTML = `
-        <div class="card" style="padding: var(--space-12); text-align: center;">
-          ${UIComponents.renderEmptyState("Paciente não localizado", "O código de paciente informado não foi encontrado nos dados demonstrativos.", '<a href="pacientes.html" class="btn btn-primary">Voltar para a lista</a>')}
-        </div>
-      `;
-    } else {
+      if (!patient) {
+        document.querySelector(".admin-content").innerHTML = `
+          <div class="card" style="padding: var(--space-12); text-align: center;">
+            ${UIComponents.renderEmptyState("Paciente não localizado", "O código de paciente informado não foi encontrado no banco de dados.", '<a href="pacientes.html" class="btn btn-primary">Voltar para a lista</a>')}
+          </div>
+        `;
+        return;
+      }
       document.getElementById("patient-crumb-name").innerText = patient.name;
       document.getElementById("patient-header-name").innerText = patient.name;
       document.getElementById("patient-id").innerText = patient.id;
@@ -203,6 +208,8 @@
         </tr>
       `;
     }
+
+    loadPatientDetails();
   </script>
 </body>
 </html>

@@ -139,12 +139,16 @@ class UIComponents {
           confirmText: "Sim, sair",
           cancelText: "Cancelar",
           danger: true,
-          onConfirm: () => {
-            StorageService.clearSession();
-            Toast.info("Sessão encerrada com sucesso.");
-            setTimeout(() => {
-              window.location.href = `${basePath}../login.html`;
-            }, 500);
+          onConfirm: async () => {
+            if (window.AuthService) {
+              await AuthService.logout();
+            } else {
+              StorageService.clearSession();
+              Toast.info("Sessão encerrada com sucesso.");
+              setTimeout(() => {
+                window.location.href = `${basePath}../login.html`;
+              }, 500);
+            }
           }
         });
       });

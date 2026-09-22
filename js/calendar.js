@@ -11,13 +11,17 @@ class CalendarApp {
     this.appointments = [];
   }
 
-  init() {
-    this.loadAppointments();
+  async init() {
+    await this.loadAppointments();
     this.render();
   }
 
-  loadAppointments() {
-    this.appointments = StorageService.get("appointments", []);
+  async loadAppointments() {
+    if (window.DatabaseService) {
+      this.appointments = await DatabaseService.appointments.getAll();
+    } else {
+      this.appointments = StorageService.get("appointments", []);
+    }
   }
 
   setView(view) {

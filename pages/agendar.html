@@ -271,18 +271,61 @@
     </div>
   </footer>
 
+  <!-- Supabase & Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/mock-data.js"></script>
   <script src="../js/storage.js"></script>
+  <script src="../js/supabase-client.js"></script>
+  <script src="../js/database.js"></script>
   <script src="../js/toast.js"></script>
   <script src="../js/modal.js"></script>
   <script src="../js/navigation.js"></script>
   <script>
     // Lógica do Wizard de Agendamento Público
+    let currentStep = 1;
     let selectedService = "Avaliação Odontológica";
     let selectedDate = "2026-09-23";
     let selectedTime = "09:30";
 
-    // Seleção de serviço
+    function setStep(step) {
+      currentStep = step;
+      document.querySelectorAll(".wizard-step-item").forEach(el => {
+        const s = parseInt(el.getAttribute("data-step"));
+        if (s === step) el.className = "wizard-step-item active";
+        else if (s < step) el.className = "wizard-step-item completed";
+        else el.className = "wizard-step-item";
+      });
+
+      document.querySelectorAll(".wizard-section").forEach(sec => sec.style.display = "none");
+      const currentSec = document.getElementById(`step-${step}-content`);
+      if (currentSec) currentSec.style.display = "block";
+      window.scrollTo({ top: 120, behavior: "smooth" });
+    }
+
+    // Povoar serviços do Supabase se disponíveis
+    async function loadPublicServices() {
+      const services = await DatabaseService.services.getAll();
+      const srvGrid = document.querySelector(".service-selection-grid") || document.getElementById("service-options");
+      if (services && services.length > 0 && srvGrid) {
+        srvGrid.innerHTML = services.map((s, i) => `
+          <div class="selectable-card ${i === 0 ? 'selected' : ''}" data-value="${s.name}">
+            <div class="text-bold">${s.name}</div>
+            <div class="text-xs text-muted" style="margin-top: 2px;">${s.duration || '30 min'} • ${s.price || 'Consultar'}</div>
+          </div>
+        `).join("");
+
+        srvGrid.querySelectorAll(".selectable-card").forEach(card => {
+          card.onclick = () => {
+            srvGrid.querySelectorAll(".selectable-card").forEach(c => c.classList.remove("selected"));
+            card.classList.add("selected");
+            selectedService = card.getAttribute("data-value");
+          };
+        });
+      }
+    }
+    loadPublicServices();
+
+    // Seleção de serviço inicial estática caso exista
     document.querySelectorAll("#service-options .selectable-card").forEach(card => {
       card.addEventListener("click", () => {
         document.querySelectorAll("#service-options .selectable-card").forEach(c => c.classList.remove("selected"));
@@ -292,40 +335,36 @@
     });
 
     // Seleção de horário
-    document.querySelectorAll("#time-slots-container .time-slot-btn").forEach(btn => {
+    document.querySelectorAll("#time-slots-container .time-slot-btn, .time-slot-btn").forEach(btn => {
       btn.addEventListener("click", () => {
-        document.querySelectorAll("#time-slots-container .time-slot-btn").forEach(b => b.classList.remove("selected"));
+        document.querySelectorAll(".time-slot-btn").forEach(b => b.classList.remove("selected"));
         btn.classList.add("selected");
         selectedTime = btn.getAttribute("data-time");
       });
     });
 
-    function setStep(stepNum) {
-      document.querySelectorAll(".wizard-section").forEach(s => s.style.display = "none");
-      document.getElementById(`step-${stepNum}-content`).style.display = "block";
-
-      document.querySelectorAll(".wizard-step-item").forEach(item => {
-        const itemStep = parseInt(item.getAttribute("data-step"));
-        item.classList.remove("active", "completed");
-        if (itemStep === stepNum) item.classList.add("active");
-        if (itemStep < stepNum) item.classList.add("completed");
-      });
-    }
-
-    // Navegação entre passos
     document.getElementById("btn-next-1").onclick = () => setStep(2);
     document.getElementById("btn-prev-2").onclick = () => setStep(1);
-    
-    document.getElementById("btn-next-2").onclick = () => {
-      selectedDate = document.getElementById("appointment-date").value;
-      if (!selectedDate) {
-        Toast.warning("Por favor, selecione uma data válida.");
-        return;
-      }
-      setStep(3);
-    };
-    document.getElementById("btn-prev-3").onclick = () => setStep(2);
+    document.getElementById("btn-next-2").onclick = () => setStep(3);
 
+    // Seleção de datas e horários
+    document.querySelectorAll(".date-pill").forEach(pill => {
+      pill.onclick = () => {
+        document.querySelectorAll(".date-pill").forEach(p => p.classList.remove("selected"));
+        pill.classList.add("selected");
+        selectedDate = pill.getAttribute("data-date");
+      };
+    });
+
+    document.querySelectorAll(".time-slot-btn").forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll(".time-slot-btn").forEach(b => b.classList.remove("selected"));
+        btn.classList.add("selected");
+        selectedTime = btn.getAttribute("data-time");
+      };
+    });
+
+    document.getElementById("btn-prev-3").onclick = () => setStep(2);
     document.getElementById("btn-next-3").onclick = () => setStep(4);
     document.getElementById("btn-prev-4").onclick = () => setStep(3);
 
@@ -350,39 +389,55 @@
     };
     document.getElementById("btn-prev-5").onclick = () => setStep(4);
 
-    // Confirmação final e gravação no LocalStorage
-    document.getElementById("btn-confirm-appointment").onclick = () => {
+    // Confirmação final e gravação no Supabase
+    document.getElementById("btn-confirm-appointment").onclick = async () => {
+      const confirmBtn = document.getElementById("btn-confirm-appointment");
+      confirmBtn.disabled = true;
+      confirmBtn.innerHTML = `<span class="spinner spinner-sm"></span> Registrando no Supabase...`;
+
       const name = document.getElementById("patient-name").value.trim();
       const phone = document.getElementById("patient-phone").value.trim();
       const email = document.getElementById("patient-email").value.trim();
       const notes = document.getElementById("patient-notes").value.trim();
 
-      const appointments = StorageService.get("appointments", []);
-      const newId = "APT-" + String(appointments.length + 1).padStart(3, "0");
+      try {
+        // 1. Cadastra ou localiza paciente no Supabase
+        const patientRes = await DatabaseService.patients.save({
+          name,
+          phone,
+          email,
+          status: "active",
+          notes: "Cadastrado via formulário de agendamento do site"
+        });
 
-      const newAppointment = {
-        id: newId,
-        patientId: "PAT-NEW",
-        patientName: name,
-        service: selectedService,
-        professional: "Dra. Marta Gelsi Dias",
-        date: selectedDate,
-        time: selectedTime,
-        duration: "45 min",
-        status: "Pendente",
-        origin: "Site",
-        notes: notes || "Agendado pelo site público",
-        googleEventId: "mock-google-event-" + Date.now()
-      };
+        const patientId = patientRes.patient?.id || "PAT-WEB";
 
-      appointments.push(newAppointment);
-      StorageService.set("appointments", appointments);
-      StorageService.logActivity("CREATE_APPOINTMENT", `Agendamento online solicitado por ${name} (${selectedService})`, newId, "Site Público");
+        // 2. Cria agendamento no Supabase
+        const newAppointment = {
+          patientId,
+          patientName: name,
+          service: selectedService,
+          professional: "Dra. Marta Gelsi Dias",
+          date: selectedDate,
+          time: selectedTime,
+          duration: "45 min",
+          status: "Pendente",
+          origin: "Site",
+          notes: notes || "Agendado pelo site público"
+        };
 
-      Toast.success("Agendamento solicitado com sucesso!");
-      document.querySelectorAll(".wizard-section").forEach(s => s.style.display = "none");
-      document.getElementById("wizard-steps").style.display = "none";
-      document.getElementById("step-success-content").style.display = "block";
+        await DatabaseService.appointments.save(newAppointment);
+
+        Toast.success("Agendamento gravado com sucesso no Supabase!");
+        document.querySelectorAll(".wizard-section").forEach(s => s.style.display = "none");
+        document.getElementById("wizard-steps").style.display = "none";
+        document.getElementById("step-success-content").style.display = "block";
+      } catch (err) {
+        console.error("Erro no agendamento:", err);
+        Toast.error("Erro ao registrar no Supabase. Tente novamente.");
+        confirmBtn.disabled = false;
+        confirmBtn.innerText = "Confirmar Agendamento";
+      }
     };
   </script>
 </body>

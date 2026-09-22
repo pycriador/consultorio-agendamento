@@ -36,26 +36,39 @@
           Defina os dias da semana em que o consultório atende pacientes, o expediente diário e o intervalo para almoço.
         </p>
 
-        <div id="schedules-list" style="display: flex; flex-direction: column; gap: var(--space-4);">
+        <div id="schedules-container" style="display: flex; flex-direction: column; gap: var(--space-4);">
           <!-- Renderizado dinamicamente com inputs de horário para cada dia -->
         </div>
       </div>
     </main>
   </div>
 
+  <!-- Supabase & Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/mock-data.js"></script>
   <script src="../js/storage.js"></script>
+  <script src="../js/supabase-client.js"></script>
+  <script src="../js/database.js"></script>
   <script src="../js/toast.js"></script>
   <script src="../js/modal.js"></script>
   <script src="../js/components.js"></script>
+  <script src="../js/auth.js"></script>
   <script src="../js/navigation.js"></script>
   <script>
     UIComponents.renderAdminSidebar("horarios", "");
-    UIComponents.renderAdminTopbar("Horários", "Configuração Clínica");
+    UIComponents.renderAdminTopbar("Horários", "Configurações de Atendimento");
+
+    async function loadSchedules() {
+      const settings = await DatabaseService.settings.get();
+      if (settings && settings.business_hours && Array.isArray(settings.business_hours)) {
+        StorageService.set("schedules", settings.business_hours);
+      }
+      renderSchedules();
+    }
 
     function renderSchedules() {
       const schedules = StorageService.get("schedules", initialMockData.schedules);
-      const container = document.getElementById("schedules-list");
+      const container = document.getElementById("schedules-container");
 
       container.innerHTML = schedules.map((sch, index) => `
         <div class="card" style="padding: var(--space-4) var(--space-6); background-color: ${sch.active ? 'var(--color-surface)' : '#f8fafc'}; border-color: ${sch.active ? 'var(--color-border)' : '#e2e8f0'};">
@@ -103,7 +116,11 @@
       });
     }
 
-    document.getElementById("btn-save-all-schedules").onclick = () => {
+    document.getElementById("btn-save-all-schedules").onclick = async () => {
+      const btn = document.getElementById("btn-save-all-schedules");
+      btn.disabled = true;
+      btn.innerHTML = `<span class="spinner spinner-sm"></span> Salvando no Supabase...`;
+
       const schedules = StorageService.get("schedules", initialMockData.schedules);
       document.querySelectorAll(".sch-active-toggle").forEach(el => {
         const idx = el.getAttribute("data-idx");
@@ -123,12 +140,22 @@
       });
 
       StorageService.set("schedules", schedules);
-      StorageService.logActivity("UPDATE_SCHEDULES", "Grade semanal de horários e disponibilidade atualizada", "CONFIG-SCH");
-      Toast.success("Horários de atendimento atualizados com sucesso!");
+
+      try {
+        await DatabaseService.settings.save({ business_hours: schedules });
+        Toast.success("Horários de atendimento salvos com sucesso no Supabase!");
+      } catch (err) {
+        console.error(err);
+        Toast.error("Erro ao salvar horários no Supabase.");
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "Salvar Todos os Horários";
+      }
+
       renderSchedules();
     };
 
-    renderSchedules();
+    loadSchedules();
   </script>
 </body>
 </html>

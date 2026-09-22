@@ -45,9 +45,9 @@
             </div>
             <p class="text-secondary" style="margin-top: 2px;">Cirurgiã-Dentista • Responsável Técnica</p>
             <div class="flex gap-6 flex-wrap" style="margin-top: var(--space-4); font-size: var(--font-size-xs); color: var(--color-text-muted);">
-              <span><strong>E-mail:</strong> admin@demo.com</span>
+              <span id="profile-email"><strong>E-mail:</strong> admin@dramartagelsi.com.br</span>
               <span><strong>WhatsApp:</strong> (11) 99577-0004</span>
-              <span><strong>Último Acesso:</strong> Hoje às 08:15:22</span>
+              <span><strong>Último Acesso:</strong> Hoje</span>
             </div>
           </div>
         </div>
@@ -87,6 +87,10 @@
     </main>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/supabase-client.js"></script>
+  <script src="../js/database.js"></script>
+  <script src="../js/auth.js"></script>
   <script src="../js/mock-data.js"></script>
   <script src="../js/storage.js"></script>
   <script src="../js/toast.js"></script>
@@ -94,8 +98,21 @@
   <script src="../js/components.js"></script>
   <script src="../js/navigation.js"></script>
   <script>
+    // Proteger rota com AuthGuard
+    AuthGuard.checkAuth();
+
     UIComponents.renderAdminSidebar("perfil", "");
     UIComponents.renderAdminTopbar("Meu Perfil", "Conta");
+
+    // Preencher dados do usuário logado via Supabase
+    async function loadUserProfile() {
+      const user = await AuthService.getUser();
+      if (user && user.email) {
+        const emailSpan = document.getElementById("profile-email");
+        if (emailSpan) emailSpan.innerHTML = `<strong>E-mail:</strong> ${user.email}`;
+      }
+    }
+    loadUserProfile();
 
     function renderAuditLogs() {
       const logs = StorageService.get("auditLogs", []);
@@ -153,7 +170,7 @@
     document.getElementById("btn-change-password-modal").onclick = () => {
       Modal.confirm({
         title: "Alterar Senha",
-        message: "Por se tratar de um mockup com autenticação simulada, a senha de demonstração continuará sendo 123456.",
+        message: "Sua conta é gerenciada via Supabase Auth com criptografia. Para atualizar sua senha de acesso, você pode redefini-la via e-mail ou pelo console Supabase.",
         confirmText: "Entendido",
         cancelText: "Fechar"
       });
@@ -166,12 +183,8 @@
         confirmText: "Sim, sair",
         cancelText: "Cancelar",
         danger: true,
-        onConfirm: () => {
-          StorageService.clearSession();
-          Toast.info("Sessão encerrada com sucesso.");
-          setTimeout(() => {
-            window.location.href = "../login.html";
-          }, 500);
+        onConfirm: async () => {
+          await AuthService.logout();
         }
       });
     };

@@ -123,18 +123,23 @@
     </div>
   </div>
 
+  <!-- Supabase & Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/mock-data.js"></script>
   <script src="../js/storage.js"></script>
+  <script src="../js/supabase-client.js"></script>
+  <script src="../js/database.js"></script>
   <script src="../js/toast.js"></script>
   <script src="../js/modal.js"></script>
   <script src="../js/components.js"></script>
+  <script src="../js/auth.js"></script>
   <script src="../js/navigation.js"></script>
   <script>
     UIComponents.renderAdminSidebar("servicos", "");
     UIComponents.renderAdminTopbar("Serviços", "Configurações Clínicas");
 
-    function renderServices() {
-      const services = StorageService.get("services", []);
+    async function renderServices() {
+      const services = await DatabaseService.services.getAll();
       const tbody = document.getElementById("services-tbody");
 
       if (services.length === 0) {
@@ -173,38 +178,36 @@
         btn.onclick = () => openEditService(btn.getAttribute("data-id"));
       });
 
-      // Bind alternar status
+      // Bind alternar status no Supabase
       tbody.querySelectorAll(".btn-toggle-srv").forEach(btn => {
-        btn.onclick = () => {
+        btn.onclick = async () => {
           const id = btn.getAttribute("data-id");
-          const list = StorageService.get("services", []);
+          const list = await DatabaseService.services.getAll();
           const s = list.find(x => x.id === id);
           if (s) {
             s.status = s.status === "active" ? "inactive" : "active";
-            StorageService.set("services", list);
-            Toast.info(`Status do serviço alterado para ${s.status === 'active' ? 'Ativo' : 'Inativo'}`);
-            renderServices();
+            await DatabaseService.services.save(s);
+            Toast.info(`Status do serviço alterado para ${s.status === 'active' ? 'Ativo' : 'Inativo'} no Supabase.`);
+            await renderServices();
           }
         };
       });
 
-      // Bind exclusão
+      // Bind exclusão no Supabase
       tbody.querySelectorAll(".btn-delete-srv").forEach(btn => {
         btn.onclick = () => {
           const id = btn.getAttribute("data-id");
           const name = btn.getAttribute("data-name");
           Modal.confirm({
             title: "Excluir serviço?",
-            message: `Deseja remover o serviço "${name}" (${id}) do catálogo?`,
+            message: `Deseja remover permanentemente o serviço "${name}" (${id}) do Supabase?`,
             confirmText: "Sim, excluir",
             cancelText: "Cancelar",
             danger: true,
-            onConfirm: () => {
-              const list = StorageService.get("services", []).filter(x => x.id !== id);
-              StorageService.set("services", list);
-              StorageService.logActivity("DELETE_SERVICE", `Serviço excluído: ${name}`, id);
-              Toast.success("Serviço excluído com sucesso.");
-              renderServices();
+            onConfirm: async () => {
+              await DatabaseService.services.delete(id);
+              Toast.success("Serviço excluído do Supabase com sucesso.");
+              await renderServices();
             }
           });
         };
@@ -222,8 +225,8 @@
       Modal.open(modalEl);
     };
 
-    function openEditService(id) {
-      const services = StorageService.get("services", []);
+    async function openEditService(id) {
+      const services = await DatabaseService.services.getAll();
       const s = services.find(x => x.id === id);
       if (!s) return;
       document.getElementById("service-form-id").value = s.id;
@@ -237,12 +240,16 @@
       Modal.open(modalEl);
     }
 
-    formEl.onsubmit = (e) => {
+    // Salvar serviço no Supabase
+    formEl.onsubmit = async (e) => {
       e.preventDefault();
-      const id = document.getElementById("service-form-id").value;
-      const services = StorageService.get("services", []);
+      const submitBtn = formEl.querySelector("button[type='submit']");
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<span class="spinner spinner-sm"></span> Salvando no Supabase...`;
 
+      const id = document.getElementById("service-form-id").value;
       const data = {
+        id: id || undefined,
         name: document.getElementById("service-form-name").value.trim(),
         category: document.getElementById("service-form-category").value,
         duration: document.getElementById("service-form-duration").value,
@@ -251,22 +258,18 @@
         description: document.getElementById("service-form-description").value.trim()
       };
 
-      if (id) {
-        const idx = services.findIndex(x => x.id === id);
-        if (idx !== -1) {
-          services[idx] = { ...services[idx], ...data };
-          StorageService.logActivity("UPDATE_SERVICE", `Serviço atualizado: ${data.name}`, id);
-        }
-      } else {
-        data.id = "SRV-" + String(services.length + 1).padStart(3, "0");
-        services.push(data);
-        StorageService.logActivity("CREATE_SERVICE", `Novo serviço cadastrado: ${data.name}`, data.id);
+      try {
+        await DatabaseService.services.save(data);
+        Modal.close(modalEl);
+        Toast.success("Serviço salvo com sucesso no Supabase!");
+        await renderServices();
+      } catch (err) {
+        console.error(err);
+        Toast.error("Erro ao salvar serviço no Supabase.");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = "Salvar Serviço";
       }
-
-      StorageService.set("services", services);
-      Modal.close(modalEl);
-      Toast.success("Serviço salvo com sucesso!");
-      renderServices();
     };
 
     renderServices();

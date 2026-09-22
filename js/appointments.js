@@ -1,6 +1,6 @@
 /**
  * APPOINTMENTS MODULE
- * Gestão de consultas, criação com timeline e integração mock
+ * Gestão de consultas, criação com timeline e integração com Supabase + LocalStorage
  */
 
 class AppointmentsManager {
@@ -8,12 +8,28 @@ class AppointmentsManager {
     return StorageService.get("appointments", []);
   }
 
+  static async fetchAppointments() {
+    if (window.DatabaseService) {
+      return await DatabaseService.appointments.getAll();
+    }
+    return this.getAppointments();
+  }
+
   static getAppointmentById(id) {
     const list = this.getAppointments();
     return list.find(a => a.id === id) || null;
   }
 
-  static saveAppointment(data) {
+  static async fetchAppointmentById(id) {
+    const list = await this.fetchAppointments();
+    return list.find(a => a.id === id) || null;
+  }
+
+  static async saveAppointment(data) {
+    if (window.DatabaseService) {
+      return await DatabaseService.appointments.save(data);
+    }
+
     const list = this.getAppointments();
     let isNew = false;
 
@@ -35,7 +51,11 @@ class AppointmentsManager {
     return { success: true, appointment: data, isNew };
   }
 
-  static updateStatus(id, newStatus) {
+  static async updateStatus(id, newStatus) {
+    if (window.DatabaseService) {
+      return await DatabaseService.appointments.updateStatus(id, newStatus);
+    }
+
     const list = this.getAppointments();
     const apt = list.find(a => a.id === id);
     if (apt) {
@@ -47,7 +67,11 @@ class AppointmentsManager {
     return false;
   }
 
-  static deleteAppointment(id) {
+  static async deleteAppointment(id) {
+    if (window.DatabaseService) {
+      return await DatabaseService.appointments.delete(id);
+    }
+
     const list = this.getAppointments();
     const apt = list.find(a => a.id === id);
     const filtered = list.filter(a => a.id !== id);

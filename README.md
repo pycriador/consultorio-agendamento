@@ -211,44 +211,58 @@ Para uma experiência idêntica à de produção (com suporte ideal a módulos e
 
 ---
 
-## 🔑 Credenciais de Demonstração (Área Interna)
+## 🗄️ Integração com Supabase (Banco de Dados & Autenticação Real)
+
+A plataforma conta com integração completa com o **Supabase** (PostgreSQL na nuvem e Supabase Auth), provendo autenticação real com senhas criptografadas e operações de CRUD completas e persistentes.
+
+### 🔐 Autenticação com Senhas Criptografadas
+- **Engine:** Supabase Auth (`auth.users`) com criptografia robusta (bcrypt).
+- **Controle de Acesso:** Camada `AuthGuard` client-side em todas as páginas administrativas de `/pages/`. Se o token JWT não estiver ativo ou for inválido, o usuário é imediatamente redirecionado para `login.html`.
+- **Credenciais Oficiais de Acesso:**
+  - **E-mail:** `admin@dramartagelsi.com.br`
+  - **Senha:** `Marta@2026Admin` *(usuário provisionado com senha criptografada)*
+
+### 📊 Estrutura Relacional do Banco de Dados
+O script completo de criação das tabelas, índices e políticas de Row Level Security (RLS) está disponível em [`supabase/schema.sql`](supabase/schema.sql):
+- `patients`: Dados cadastrais de pacientes (nome, CPF, telefone, e-mail, convênio, status, notas de anamnese).
+- `appointments`: Agenda e consultas (data, horário, serviço, status: confirmado/pendente/cancelado/realizado, valor).
+- `services`: Catálogo de procedimentos odontológicos, duração e valores.
+- `plans`: Convênios odontológicos aceitos e coberturas.
+- `clinic_settings`: Configurações operacionais e horários de atendimento da clínica.
+- `messages`: Mensagens e templates de comunicação.
+- `audit_logs`: Registro de ações e auditoria do sistema.
+
+### ⚡ Como executar o Schema e o Seed no Supabase
+1. Acesse o painel do seu projeto no [Supabase Dashboard](https://supabase.com/dashboard).
+2. Abra o menu **SQL Editor**.
+3. Copie e cole todo o conteúdo do arquivo [`supabase/schema.sql`](supabase/schema.sql) e clique em **Run**.
+4. Para popular os dados iniciais pelo backend Node.js (opcional):
+   ```bash
+   node scripts/seed-supabase.js
+   ```
+
+> **Resiliência:** O `DatabaseService` possui fallback automático e sincronização com o storage local, garantindo alta disponibilidade da interface com resposta instantânea.
+
+---
+
+## 🔑 Credenciais de Acesso (Área Interna)
 
 Para acessar o Painel Administrativo de Gestão Clínica:
 
 1. Clique no botão **"Área interna"** no menu superior da Landing Page ou acesse [`login.html`](login.html).
-2. Utilize as credenciais de teste:
-   - **E-mail:** `marta@odontologia.com.br` (ou qualquer e-mail válido)
-   - **Senha:** `admin123` (ou qualquer senha com 6+ caracteres)
-3. Clique em **"Entrar no Sistema"**. O sistema salvará a sessão ativa no LocalStorage e redirecionará para o Dashboard.
-
-> **Dica:** Para redefinir todos os dados simulados para o estado padrão original, acesse o console do navegador (`F12`) e execute: `localStorage.clear(); location.reload();`.
+2. Utilize as credenciais do Supabase Auth:
+   - **E-mail:** `admin@dramartagelsi.com.br`
+   - **Senha:** `Marta@2026Admin`
+3. Clique em **"Entrar no Sistema"**. O sistema autenticará o usuário diretamente pelo Supabase Auth, armazenará o token de sessão e redirecionará para o Dashboard.
 
 ---
 
 ## 📱 Responsividade & Suporte Multiplataforma
 
 O projeto foi rigorosamente testado em diferentes resoluções e formatos de tela:
-- **Mobile (Smartphones até 480px e 768px):** Menu colapsável em gaveta lateral (drawer), tabelas com scroll touch horizontal, botões com área de toque mínima de 44px e formulários em coluna única.
+- **Mobile (Smartphones até 480px e 768px):** Menu colapsável em gaveta lateral (drawer), dropdown unificado de ações de paciente, tabelas com scroll touch horizontal, botões com área de toque mínima de 44px e formulários em coluna única.
 - **Tablets (769px a 1024px):** Grids adaptativos de 2 colunas e agenda redimensionável.
 - **Desktops & Telas Ultrawide (1025px+):** Sidebar fixa com navegação rápida, cards informativos em 4 colunas e aproveitamento inteligente do espaço visual.
-
----
-
-## 🔮 Roadmap para Fases Futuras (Evolução para Produção)
-
-Para converter este protótipo navegável em uma plataforma SaaS de produção em nuvem:
-
-1. **Back-end & API RESTful:**
-   - Criação de uma API em Node.js (Express/NestJS) ou Python (FastAPI).
-   - Autenticação segura com JWT e hash de senhas (bcrypt/Argon2).
-2. **Banco de Dados Relacional:**
-   - Modelagem de dados em PostgreSQL com tabelas de usuários, pacientes, agendamentos, prontuários e logs de auditoria.
-3. **Integrações de Produção:**
-   - **WhatsApp Business Cloud API:** Disparo de mensagens automáticas oficiais com botões de confirmação instantânea *"Sim, confirmo"* / *"Desejo remarcar"*.
-   - **Google Calendar API:** Sincronização em tempo real via OAuth 2.0.
-   - **Gateway de Pagamento:** Cobrança de consultas e sinal via Pix automático ou cartão de crédito.
-4. **Prontuário Eletrônico Certificado:**
-   - Assinatura digital ICP-Brasil de prescrições e atestados odontológicos.
 
 ---
 

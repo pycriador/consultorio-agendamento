@@ -104,18 +104,23 @@
     </div>
   </div>
 
+  <!-- Supabase & Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/mock-data.js"></script>
   <script src="../js/storage.js"></script>
+  <script src="../js/supabase-client.js"></script>
+  <script src="../js/database.js"></script>
   <script src="../js/toast.js"></script>
   <script src="../js/modal.js"></script>
   <script src="../js/components.js"></script>
+  <script src="../js/auth.js"></script>
   <script src="../js/navigation.js"></script>
   <script>
     UIComponents.renderAdminSidebar("planos", "");
     UIComponents.renderAdminTopbar("Planos", "Comercial");
 
-    function renderPlans() {
-      const plans = StorageService.get("plans", []);
+    async function renderPlans() {
+      const plans = await DatabaseService.plans.getAll();
       const grid = document.getElementById("plans-grid-container");
 
       if (plans.length === 0) {
@@ -129,7 +134,7 @@
           
           <div style="margin-bottom: var(--space-4);">
             <h3 style="font-size: var(--font-size-md); margin-bottom: 2px;">${p.name}</h3>
-            <span class="badge badge-neutral">${p.periodicity}</span>
+            <span class="badge badge-neutral">${p.periodicity || p.category || 'Mensal'}</span>
           </div>
 
           <div style="margin-bottom: var(--space-4);">
@@ -149,7 +154,7 @@
           </div>
 
           <div class="flex items-center justify-between" style="border-top: 1px solid var(--color-border); padding-top: var(--space-4);">
-            <div>${UIComponents.renderStatusBadge(p.active ? "Ativo" : "Inativo")}</div>
+            <div>${UIComponents.renderStatusBadge(p.active !== false ? "Ativo" : "Inativo")}</div>
             <div class="flex gap-1">
               <button type="button" class="btn btn-ghost btn-sm btn-edit-plan" data-id="${p.id}" title="Editar">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
@@ -170,38 +175,36 @@
         btn.onclick = () => openEditPlan(btn.getAttribute("data-id"));
       });
 
-      // Bind toggle status
+      // Bind toggle status no Supabase
       grid.querySelectorAll(".btn-toggle-plan").forEach(btn => {
-        btn.onclick = () => {
+        btn.onclick = async () => {
           const id = btn.getAttribute("data-id");
-          const list = StorageService.get("plans", []);
+          const list = await DatabaseService.plans.getAll();
           const p = list.find(x => x.id === id);
           if (p) {
             p.active = !p.active;
-            StorageService.set("plans", list);
-            Toast.info(`Plano ${p.active ? 'ativado' : 'desativado'}.`);
-            renderPlans();
+            await DatabaseService.plans.save(p);
+            Toast.info(`Plano ${p.active ? 'ativado' : 'desativado'} no Supabase.`);
+            await renderPlans();
           }
         };
       });
 
-      // Bind exclusão
+      // Bind exclusão no Supabase
       grid.querySelectorAll(".btn-delete-plan").forEach(btn => {
         btn.onclick = () => {
           const id = btn.getAttribute("data-id");
           const name = btn.getAttribute("data-name");
           Modal.confirm({
             title: "Excluir plano?",
-            message: `Deseja remover o plano "${name}" (${id})?`,
+            message: `Deseja remover o plano "${name}" (${id}) do Supabase?`,
             confirmText: "Sim, excluir",
             cancelText: "Cancelar",
             danger: true,
-            onConfirm: () => {
-              const filtered = StorageService.get("plans", []).filter(x => x.id !== id);
-              StorageService.set("plans", filtered);
-              StorageService.logActivity("DELETE_PLAN", `Plano excluído: ${name}`, id);
-              Toast.success("Plano excluído com sucesso.");
-              renderPlans();
+            onConfirm: async () => {
+              await DatabaseService.plans.delete(id);
+              Toast.success("Plano excluído do Supabase com sucesso.");
+              await renderPlans();
             }
           });
         };
@@ -220,8 +223,8 @@
       Modal.open(modalEl);
     };
 
-    function openEditPlan(id) {
-      const plans = StorageService.get("plans", []);
+    async function openEditPlan(id) {
+      const plans = await DatabaseService.plans.getAll();
       const p = plans.find(x => x.id === id);
       if (!p) return;
       document.getElementById("plan-form-id").value = p.id;
@@ -236,42 +239,41 @@
       Modal.open(modalEl);
     }
 
-    formEl.onsubmit = (e) => {
+    // Salvar plano no Supabase
+    formEl.onsubmit = async (e) => {
       e.preventDefault();
-      const id = document.getElementById("plan-form-id").value;
-      const plans = StorageService.get("plans", []);
+      const submitBtn = formEl.querySelector("button[type='submit']");
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<span class="spinner spinner-sm"></span> Salvando no Supabase...`;
 
+      const id = document.getElementById("plan-form-id").value;
       const servicesArr = document.getElementById("plan-form-services").value
         .split(",")
         .map(s => s.trim())
         .filter(Boolean);
 
       const planData = {
+        id: id || undefined,
         name: document.getElementById("plan-form-name").value.trim(),
-        periodicity: document.getElementById("plan-form-periodicity").value,
+        category: document.getElementById("plan-form-periodicity").value,
         price: document.getElementById("plan-form-price").value.trim() || "Consultar",
-        services: servicesArr,
         description: document.getElementById("plan-form-desc").value.trim(),
-        highlight: document.getElementById("plan-form-highlight").checked,
-        active: document.getElementById("plan-form-active").checked
+        features: servicesArr,
+        status: document.getElementById("plan-form-active").checked ? 'active' : 'inactive'
       };
 
-      if (id) {
-        const idx = plans.findIndex(x => x.id === id);
-        if (idx !== -1) {
-          plans[idx] = { ...plans[idx], ...planData };
-          StorageService.logActivity("UPDATE_PLAN", `Plano atualizado: ${planData.name}`, id);
-        }
-      } else {
-        planData.id = "PLN-" + String(plans.length + 1).padStart(3, "0");
-        plans.push(planData);
-        StorageService.logActivity("CREATE_PLAN", `Novo plano criado: ${planData.name}`, planData.id);
+      try {
+        await DatabaseService.plans.save(planData);
+        Modal.close(modalEl);
+        Toast.success("Plano salvo com sucesso no Supabase!");
+        await renderPlans();
+      } catch (err) {
+        console.error(err);
+        Toast.error("Erro ao salvar plano no Supabase.");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = "Salvar Plano";
       }
-
-      StorageService.set("plans", plans);
-      Modal.close(modalEl);
-      Toast.success("Plano salvo com sucesso!");
-      renderPlans();
     };
 
     renderPlans();
